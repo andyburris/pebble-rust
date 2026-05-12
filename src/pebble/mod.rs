@@ -33,6 +33,10 @@ pub use internal::alloc;
 pub use internal::types::Window as RawWindow;
 pub type WindowPtr = *mut RawWindow;
 
+pub use internal::types::GContext;
+pub use internal::types::GBitmap;
+pub use internal::types::Layer as RawLayer;
+
 pub type Result<T> = core::result::Result<T, &'static str>;
 
 pub use internal::functions::declarations::app_log as println;

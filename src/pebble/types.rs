@@ -17,8 +17,7 @@
  */
 
 pub use crate::pebble::internal::types::{GColor, GRect, GPoint, GSize, tm, TimeUnits, GCompOp, AppMessageResult,
-                                         Tuple, TupleValue};
-use crate::pebble::internal::types::GBitmap;
+                                         Tuple, TupleValue, MenuIndex, MenuLayerCallbacks, GBitmap};
 use crate::pebble::internal::functions::{interface, declarations};
 
 pub type VoidPtr = *const crate::pebble::internal::types::c_void;

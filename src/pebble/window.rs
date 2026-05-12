@@ -72,4 +72,16 @@ impl Window {
     pub fn clean_exit(&self) {
         interface::window_destroy(self.internal);
     }
+
+    pub fn set_user_data<T>(&self, data: *mut T) {
+        interface::window_set_user_data(self.internal, data);
+    }
+
+    pub fn get_user_data<T>(&self) -> *mut T {
+        interface::window_get_user_data(self.internal)
+    }
+
+    pub fn raw(&self) -> crate::pebble::WindowPtr {
+        self.internal
+    }
 }

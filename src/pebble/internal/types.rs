@@ -33,6 +33,7 @@ pub enum ClickRecognizer {}
 pub enum GBitmap {}
 pub enum GContext {}
 pub enum BitmapLayer {}
+pub enum MenuLayer {}
 
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -237,4 +238,36 @@ pub struct BatteryChargeState {
 pub struct ConnectionHandlers {
     pub app: extern "C" fn(bool),
     pub pebblekit: extern "C" fn(bool)
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct MenuIndex {
+    pub section: u16,
+    pub row: u16,
+}
+
+impl MenuIndex {
+    pub fn row_idx(&self) -> usize { self.row as usize }
+    pub fn section_idx(&self) -> usize { self.section as usize }
+}
+
+// MenuLayer* is *mut u8 (callers never call methods on it).
+// GContext* and Layer* are typed so callers can pass them directly to the draw helpers.
+// The void* callback context uses *mut () (Rust-idiomatic void pointer).
+#[repr(C)]
+pub struct MenuLayerCallbacks {
+    pub get_num_sections:      Option<extern "C" fn(*mut u8, *mut ()) -> u16>,
+    pub get_num_rows:          Option<extern "C" fn(*mut u8, u16, *mut ()) -> u16>,
+    pub get_cell_height:       Option<extern "C" fn(*mut u8, *const MenuIndex, *mut ()) -> i16>,
+    pub get_header_height:     Option<extern "C" fn(*mut u8, u16, *mut ()) -> i16>,
+    pub draw_row:              Option<extern "C" fn(*mut GContext, *const Layer, *const MenuIndex, *mut ())>,
+    pub draw_header:           Option<extern "C" fn(*mut GContext, *const Layer, u16, *mut ())>,
+    pub select_click:          Option<extern "C" fn(*mut u8, *const MenuIndex, *mut ())>,
+    pub select_long_click:     Option<extern "C" fn(*mut u8, *const MenuIndex, *mut ())>,
+    pub selection_changed:     Option<extern "C" fn(*mut u8, MenuIndex, MenuIndex, *mut ())>,
+    pub get_separator_height:  Option<extern "C" fn(*mut u8, *const MenuIndex, *mut ()) -> i16>,
+    pub draw_separator:        Option<extern "C" fn(*mut GContext, *const Layer, *const MenuIndex, *mut ())>,
+    pub selection_will_change: Option<extern "C" fn(*mut u8, *mut MenuIndex, MenuIndex, *mut ())>,
+    pub draw_background:       Option<extern "C" fn(*mut GContext, *const Layer, bool, *mut ())>,
 }

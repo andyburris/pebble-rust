@@ -147,6 +147,63 @@ macro_rules! impl_unsigned {
 impl_signed!(for i32, i64, i8, i16, isize);
 impl_unsigned!(for u32, u64, u8, u16, usize);
 
+// ── Received-message helpers ──────────────────────────────────────────────────
+
+/// A non-copying reference to a Tuple in a received AppMessage dictionary.
+///
+/// Pebble's Tuple C struct is packed: key:u32 | type:u8 | length:u16 | value…
+/// We work through a raw byte pointer to avoid the 580-byte copy bug in the
+/// `TupleValue` union.
+// 'a is tied to the AppMessageDict's underlying buffer lifetime, not to the
+// TupleRef itself (which is just a thin raw-pointer wrapper).
+pub struct TupleRef<'a>(*const u8, core::marker::PhantomData<&'a u8>);
+
+impl<'a> TupleRef<'a> {
+    // type: 0=byte_array 1=cstring 2=uint 3=int
+    pub fn as_i32(&self) -> i32 {
+        unsafe {
+            let tp = self.0;
+            let type_byte = *tp.add(4);
+            let length = core::ptr::read_unaligned(tp.add(5) as *const u16);
+            match (type_byte, length) {
+                (2, 1) => *tp.add(7) as i32,
+                (2, 2) => core::ptr::read_unaligned(tp.add(7) as *const u16) as i32,
+                (3, 1) => (*tp.add(7) as i8) as i32,
+                (3, 2) => core::ptr::read_unaligned(tp.add(7) as *const i16) as i32,
+                _      => core::ptr::read_unaligned(tp.add(7) as *const i32),
+            }
+        }
+    }
+
+    // Returns &'a str so the slice lifetime is tied to the buffer, not to self.
+    // This lets callers use .map(|t| t.as_str()) without a borrow-of-local error.
+    pub fn as_str(&self) -> &'a str {
+        unsafe {
+            let tp = self.0;
+            let len = core::ptr::read_unaligned(tp.add(5) as *const u16) as usize;
+            let bytes = core::slice::from_raw_parts(tp.add(7), len.saturating_sub(1));
+            core::str::from_utf8_unchecked(bytes)
+        }
+    }
+}
+
+/// A safe, non-copying view of a received AppMessage dictionary.
+pub struct AppMessageDict(*mut DictionaryIterator);
+
+impl AppMessageDict {
+    pub fn from_raw(ptr: *mut DictionaryIterator) -> Self { AppMessageDict(ptr) }
+
+    pub fn find(&self, key: u32) -> Option<TupleRef<'_>> {
+        unsafe {
+            let tp = dict_find(self.0, key);
+            if tp.is_null() { None } else { Some(TupleRef(tp as *const u8, core::marker::PhantomData)) }
+        }
+    }
+
+    pub fn find_i32(&self, key: u32) -> Option<i32> { self.find(key).map(|t| t.as_i32()) }
+    pub fn find_str(&self, key: u32) -> Option<&str> { self.find(key).map(|t| t.as_str()) }
+}
+
 pub struct AppMessage;
 
 impl AppMessage {

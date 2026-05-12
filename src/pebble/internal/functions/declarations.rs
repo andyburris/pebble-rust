@@ -147,4 +147,14 @@ extern "C" {
 
     // Logging
     pub fn app_log(level: u8, filename: *const c_char, line_num: u32, msg: *const c_char, ...);
+
+    // MenuLayer
+    pub fn menu_layer_create(frame: GRect) -> *mut MenuLayer;
+    pub fn menu_layer_destroy(menu_layer: *mut MenuLayer);
+    pub fn menu_layer_get_layer(menu_layer: *mut MenuLayer) -> *mut Layer;
+    pub fn menu_layer_set_callbacks(menu_layer: *mut MenuLayer, callback_context: *mut c_void, callbacks: MenuLayerCallbacks);
+    pub fn menu_layer_set_click_config_onto_window(menu_layer: *mut MenuLayer, window: *mut Window);
+    pub fn menu_layer_reload_data(menu_layer: *mut MenuLayer);
+    pub fn menu_cell_basic_draw(ctx: *mut GContext, cell_layer: *const Layer, title: *const c_char, subtitle: *const c_char, icon: *mut GBitmap);
+    pub fn menu_cell_basic_header_draw(ctx: *mut GContext, cell_layer: *const Layer, title: *const c_char);
 }

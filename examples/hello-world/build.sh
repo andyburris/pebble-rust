@@ -10,8 +10,9 @@ cargo build --target $target --release || exit 1
 
 cd target/$target/release/deps
 
-# Extract the archive
-ar x *.a
+# Extract the archive (use GNU ar from Pebble SDK; macOS BSD ar can't handle GNU-format archives)
+PEBBLE_AR="$HOME/Library/Application Support/Pebble SDK/SDKs/current/toolchain/arm-none-eabi/bin/arm-none-eabi-ar"
+"$PEBBLE_AR" x *.a
 
 # Remove all the mess produced by Rust (shouldn't be a problem if you use the 'compiler-builtins' crate).
 find . -type f ! -name '*.rcgu.o' -delete

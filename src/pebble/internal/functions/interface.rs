@@ -256,3 +256,41 @@ pub fn app_log(level: u8, msg: &str, name: &str) {
                               msg.as_ptr());
     }
 }
+
+pub fn menu_layer_create(frame: GRect) -> *mut MenuLayer {
+    unsafe { declarations::menu_layer_create(frame) }
+}
+
+pub fn menu_layer_destroy(menu_layer: *mut MenuLayer) {
+    unsafe { declarations::menu_layer_destroy(menu_layer); }
+}
+
+pub fn menu_layer_get_layer(menu_layer: *mut MenuLayer) -> *mut Layer {
+    unsafe { declarations::menu_layer_get_layer(menu_layer) }
+}
+
+pub fn menu_layer_set_callbacks<T>(menu_layer: *mut MenuLayer, context: *mut T, callbacks: MenuLayerCallbacks) {
+    unsafe { declarations::menu_layer_set_callbacks(menu_layer, context as *mut c_void, callbacks); }
+}
+
+pub fn menu_layer_set_click_config_onto_window(menu_layer: *mut MenuLayer, window: *mut Window) {
+    unsafe { declarations::menu_layer_set_click_config_onto_window(menu_layer, window); }
+}
+
+pub fn menu_layer_reload_data(menu_layer: *mut MenuLayer) {
+    unsafe { declarations::menu_layer_reload_data(menu_layer); }
+}
+
+pub fn menu_cell_basic_draw(ctx: *mut GContext, cell: *const Layer, title: &str, subtitle: &str, icon: Option<*mut GBitmap>) {
+    unsafe {
+        declarations::menu_cell_basic_draw(
+            ctx, cell,
+            title.as_ptr(), subtitle.as_ptr(),
+            icon.unwrap_or(core::ptr::null_mut()),
+        );
+    }
+}
+
+pub fn menu_cell_basic_header_draw(ctx: *mut GContext, cell: *const Layer, title: &str) {
+    unsafe { declarations::menu_cell_basic_header_draw(ctx, cell, title.as_ptr()); }
+}
