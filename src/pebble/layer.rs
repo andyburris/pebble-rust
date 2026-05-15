@@ -17,6 +17,7 @@
  */
 
 use alloc::boxed::Box;
+use core::ffi::CStr;
 use crate::pebble::internal::{functions::interface, types};
 use crate::pebble::internal::types::{MenuLayer as RawMenuLayer, MenuLayerCallbacks, MenuIndex};
 use crate::pebble::types::{Bitmap, GCompOp, GRect};
@@ -43,6 +44,7 @@ pub trait ILayer {
     fn get_frame(&self) -> GRect;
     fn add_child(&self, layer: &dyn ILayer);
     fn mark_dirty(&self);
+    fn set_hidden(&self, hidden: bool);
     fn get_internal(&self) -> *mut types::Layer;
 }
 
@@ -61,6 +63,10 @@ impl ILayer for Layer {
 
     fn mark_dirty(&self) {
         interface::layer_mark_dirty(self.internal);
+    }
+
+    fn set_hidden(&self, hidden: bool) {
+        interface::layer_set_hidden(self.internal, hidden);
     }
 
     fn get_internal(&self) -> *mut types::Layer {
@@ -99,6 +105,10 @@ impl ILayer for TextLayer {
         interface::layer_mark_dirty(self.inner);
     }
 
+    fn set_hidden(&self, hidden: bool) {
+        interface::layer_set_hidden(self.inner, hidden);
+    }
+
     fn get_internal(&self) -> *mut types::Layer {
         self.inner
     }
@@ -114,11 +124,8 @@ impl TextLayer {
         }
     }
 
-    pub fn set_text(&self, text: &str) {
+    pub fn set_text(&self, text: &CStr) {
         interface::text_layer_set_text(self.internal, text);
-    }
-    pub unsafe fn set_text_raw(&self, text: *const u8)  {
-        text_layer_set_text(self.internal, text);
     }
 
     pub fn set_font(&self, font: Font) {
@@ -141,6 +148,10 @@ impl ILayer for BitmapLayer {
 
     fn mark_dirty(&self) {
         interface::layer_mark_dirty(self.inner)
+    }
+
+    fn set_hidden(&self, hidden: bool) {
+        interface::layer_set_hidden(self.inner, hidden)
     }
 
     fn get_internal(&self) -> *mut types::Layer {
@@ -178,6 +189,7 @@ impl<T> ILayer for MenuLayer<T> {
     fn get_frame(&self) -> GRect { interface::layer_get_frame(self.inner) }
     fn add_child(&self, layer: &dyn ILayer) { interface::layer_add_child(self.inner, layer.get_internal()) }
     fn mark_dirty(&self) { interface::layer_mark_dirty(self.inner) }
+    fn set_hidden(&self, hidden: bool) { interface::layer_set_hidden(self.inner, hidden) }
     fn get_internal(&self) -> *mut types::Layer { self.inner }
 }
 
@@ -311,10 +323,10 @@ extern "C" fn trampoline_draw_background<T>(gctx: *mut types::GContext, cell: *c
     if let Some(f) = c.callbacks.draw_background { f(gctx, cell, highlighted, unsafe { &*c.context }) }
 }
 
-pub fn menu_cell_basic_draw(ctx: *mut types::GContext, cell: *const types::Layer, title: &str, subtitle: &str, icon: Option<*mut types::GBitmap>) {
+pub fn menu_cell_basic_draw(ctx: *mut types::GContext, cell: *const types::Layer, title: &CStr, subtitle: &CStr, icon: Option<*mut types::GBitmap>) {
     interface::menu_cell_basic_draw(ctx, cell, title, subtitle, icon);
 }
 
-pub fn menu_cell_basic_header_draw(ctx: *mut types::GContext, cell: *const types::Layer, title: &str) {
+pub fn menu_cell_basic_header_draw(ctx: *mut types::GContext, cell: *const types::Layer, title: &CStr) {
     interface::menu_cell_basic_header_draw(ctx, cell, title);
 }

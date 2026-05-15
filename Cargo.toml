@@ -8,7 +8,7 @@ repository = "https://github.com/pebble-rust/pebble-rust"
 readme = "README.md"
 keywords = ["pebble", "watch", "cortex", "rebble", "arm"]
 categories = ["embedded", "no-std", "hardware-support", "external-ffi-bindings"]
-edition = "2018"
+edition = "2024"
 license = "GPL-3.0-or-later AND BSD-3-Clause"
 include = [
     "src/**/*.rs",

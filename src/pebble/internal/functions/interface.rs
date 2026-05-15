@@ -26,6 +26,7 @@
 #![allow(unused)]
 
 use core::mem;
+use core::ffi::CStr;
 
 use crate::pebble::internal::types::*;
 
@@ -151,15 +152,21 @@ pub fn layer_set_update_proc(layer: *mut Layer, func: extern "C" fn(*mut Layer, 
     }
 }
 
+pub fn layer_set_hidden(layer: *mut Layer, hidden: bool) {
+    unsafe {
+        declarations::layer_set_hidden(layer, hidden);
+    }
+}
+
 pub fn text_layer_create(bounds: GRect) -> *mut TextLayer {
     unsafe {
         declarations::text_layer_create(bounds)
     }
 }
 
-pub fn text_layer_set_text(layer: *mut TextLayer, text: &str) {
+pub fn text_layer_set_text(layer: *mut TextLayer, text: &CStr) {
     unsafe {
-        declarations::text_layer_set_text(layer, text.as_ptr());
+        declarations::text_layer_set_text(layer, text.as_ptr() as *const u8);
     }
 }
 
@@ -281,16 +288,16 @@ pub fn menu_layer_reload_data(menu_layer: *mut MenuLayer) {
     unsafe { declarations::menu_layer_reload_data(menu_layer); }
 }
 
-pub fn menu_cell_basic_draw(ctx: *mut GContext, cell: *const Layer, title: &str, subtitle: &str, icon: Option<*mut GBitmap>) {
+pub fn menu_cell_basic_draw(ctx: *mut GContext, cell: *const Layer, title: &CStr, subtitle: &CStr, icon: Option<*mut GBitmap>) {
     unsafe {
         declarations::menu_cell_basic_draw(
             ctx, cell,
-            title.as_ptr(), subtitle.as_ptr(),
+            title.as_ptr() as *const u8, subtitle.as_ptr() as *const u8,
             icon.unwrap_or(core::ptr::null_mut()),
         );
     }
 }
 
-pub fn menu_cell_basic_header_draw(ctx: *mut GContext, cell: *const Layer, title: &str) {
-    unsafe { declarations::menu_cell_basic_header_draw(ctx, cell, title.as_ptr()); }
+pub fn menu_cell_basic_header_draw(ctx: *mut GContext, cell: *const Layer, title: &CStr) {
+    unsafe { declarations::menu_cell_basic_header_draw(ctx, cell, title.as_ptr() as *const u8); }
 }

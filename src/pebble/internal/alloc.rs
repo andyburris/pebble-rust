@@ -2,16 +2,16 @@ use core::alloc::{GlobalAlloc, Layout};
 
 pub struct Allocator;
 
-extern "C" {
-    pub fn malloc(size: usize) -> *mut u8;
-    pub fn calloc(count: usize, size: usize) -> *mut u8;
-    pub fn realloc(ptr: *mut u8, size: usize) -> *mut u8;
-    pub fn free(ptr: *mut u8);
+unsafe extern "C" {
+    pub unsafe fn malloc(size: usize) -> *mut u8;
+    pub unsafe fn calloc(count: usize, size: usize) -> *mut u8;
+    pub unsafe fn realloc(ptr: *mut u8, size: usize) -> *mut u8;
+    pub unsafe fn free(ptr: *mut u8);
 
-    pub fn memcmp(ptr1: *const u8, ptr2: *const u8, num_bytes: usize) -> i32;
-    pub fn memcpy(dest: *mut u8, src: *const u8, num_bytes: usize) -> *mut u8;
-    pub fn memmove(dest: *mut u8, src: *const u8, num_bytes: usize) -> *mut u8;
-    pub fn memset(dest: *mut u8, assign: i32, num_bytes: usize) -> *mut u8;
+    pub unsafe fn memcmp(ptr1: *const u8, ptr2: *const u8, num_bytes: usize) -> i32;
+    pub unsafe fn memcpy(dest: *mut u8, src: *const u8, num_bytes: usize) -> *mut u8;
+    pub unsafe fn memmove(dest: *mut u8, src: *const u8, num_bytes: usize) -> *mut u8;
+    pub unsafe fn memset(dest: *mut u8, assign: i32, num_bytes: usize) -> *mut u8;
 }
 
 unsafe impl GlobalAlloc for Allocator {
