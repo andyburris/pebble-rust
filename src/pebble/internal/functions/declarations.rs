@@ -44,6 +44,8 @@ unsafe extern "C" {
 
     // Layer
     pub unsafe fn layer_create(bounds: GRect) -> *mut Layer;
+    pub unsafe fn layer_create_with_data(bounds: GRect, data_size: usize) -> *mut Layer;
+    pub unsafe fn layer_get_data(layer: *const Layer) -> *mut c_void;
     pub unsafe fn layer_destroy(layer: *mut Layer);
     pub unsafe fn layer_get_frame(layer: *mut Layer) -> GRect;
     pub unsafe fn layer_get_bounds(layer: *mut Layer) -> GRect;
@@ -57,6 +59,9 @@ unsafe extern "C" {
     pub unsafe fn text_layer_set_text(layer: *mut TextLayer, text: *const c_char);
     pub unsafe fn text_layer_get_layer(layer: *mut TextLayer) -> *mut Layer;
     pub unsafe fn text_layer_set_font(layer: *mut TextLayer, font: GFont);
+    pub unsafe fn text_layer_set_background_color(layer: *mut TextLayer, color: GColor);
+    pub unsafe fn text_layer_set_text_color(layer: *mut TextLayer, color: GColor);
+    pub unsafe fn text_layer_set_text_alignment(layer: *mut TextLayer, alignment: GTextAlignment);
 
     // GBitmap
     pub unsafe fn gbitmap_create_with_resource(id: u32) -> *mut GBitmap;
@@ -70,7 +75,15 @@ unsafe extern "C" {
 
     // Graphics
     pub unsafe fn graphics_context_set_fill_color(ctx: *mut GContext, color: GColor);
+    pub unsafe fn graphics_context_set_stroke_color(ctx: *mut GContext, color: GColor);
+    pub unsafe fn graphics_context_set_stroke_width(ctx: *mut GContext, stroke_width: u8);
     pub unsafe fn graphics_fill_circle(ctx: *mut GContext, center: GPoint, radius: u16);
+    pub unsafe fn graphics_fill_rect(ctx: *mut GContext, rect: GRect, corner_radius: u16, corner_mask: GCornerMask);
+    pub unsafe fn graphics_draw_line(ctx: *mut GContext, p0: GPoint, p1: GPoint);
+
+    // Trig
+    pub unsafe fn sin_lookup(angle: i32) -> i32;
+    pub unsafe fn cos_lookup(angle: i32) -> i32;
 
     // Wall Time
     pub unsafe fn clock_copy_time_string(buffer: *mut c_char, size: u8);
@@ -78,6 +91,7 @@ unsafe extern "C" {
     pub unsafe fn clock_get_timezone(buffer: *mut c_char, size: usize);
 
     pub unsafe fn tick_timer_service_subscribe(unit: TimeUnits, func: extern "C" fn(*mut tm, TimeUnits));
+    pub unsafe fn tick_timer_service_unsubscribe();
 
     // Standard C - Time
     pub unsafe fn time(t: *mut usize) -> usize;

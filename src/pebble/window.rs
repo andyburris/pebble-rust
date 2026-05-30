@@ -60,6 +60,10 @@ impl Window {
         interface::window_set_window_handlers(self.internal, converted);
     }
 
+    pub fn set_click_config_provider(&self, provider: extern "C" fn(WindowPtr)) {
+        interface::window_set_click_config_provider(self.internal, provider);
+    }
+
     pub fn set_background_color(&self, color: GColor) {
         interface::window_set_background_color(self.internal, color);
     }

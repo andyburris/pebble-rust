@@ -18,6 +18,21 @@
 
 use crate::pebble::internal::functions::declarations;
 
+/// Full circle in Pebble angle units.
+pub const TRIG_MAX_ANGLE: i32 = 0x10000;
+/// Max return value of sin_lookup / cos_lookup.
+pub const TRIG_MAX_RATIO: i32 = 0xFFFF;
+
+/// Sine lookup. `angle` is in [0, TRIG_MAX_ANGLE); returns [-TRIG_MAX_RATIO, TRIG_MAX_RATIO].
+pub fn sin_lookup(angle: i32) -> i32 {
+    unsafe { declarations::sin_lookup(angle) }
+}
+
+/// Cosine lookup. `angle` is in [0, TRIG_MAX_ANGLE); returns [-TRIG_MAX_RATIO, TRIG_MAX_RATIO].
+pub fn cos_lookup(angle: i32) -> i32 {
+    unsafe { declarations::cos_lookup(angle) }
+}
+
 pub fn rand() -> i32 {
     unsafe {
         declarations::rand()

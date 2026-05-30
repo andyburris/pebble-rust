@@ -26,12 +26,37 @@
 
 #![allow(non_camel_case_types)]
 
+use crate::pebble::internal::functions::{interface::{graphics_context_set_fill_color, graphics_context_set_stroke_color, graphics_context_set_stroke_width, graphics_draw_line, graphics_fill_circle, graphics_fill_rect}};
+
 pub enum Window {}
 pub enum Layer {}
 pub enum TextLayer {}
 pub enum ClickRecognizer {}
 pub enum GBitmap {}
 pub enum GContext {}
+
+impl GContext {
+    pub fn set_fill_color(&mut self, color: GColor) {
+        graphics_context_set_fill_color(self, color);
+    }
+    pub fn set_stroke_color(&mut self, color: GColor) {
+        graphics_context_set_stroke_color(self, color);
+    }
+    pub fn set_stroke_width(&mut self, stroke_width: u8) {
+        graphics_context_set_stroke_width(self, stroke_width);
+    }
+    pub fn fill_circle(&mut self, center: GPoint, radius: u16) {
+        graphics_fill_circle(self, center, radius);
+    }
+    pub fn fill_rect(&mut self, rect: GRect, corner_radius: u16, corner_mask: GCornerMask) {
+        graphics_fill_rect(self, rect, corner_radius, corner_mask);
+    }
+
+    pub fn draw_line(&mut self, p0: GPoint, p1: GPoint) {
+        graphics_draw_line(self, p0, p1);
+    }
+}
+
 pub enum BitmapLayer {}
 pub enum MenuLayer {}
 
@@ -54,6 +79,10 @@ pub struct tm {
 pub struct GPoint {
     pub x: u16,
     pub y: u16,
+}
+
+impl GPoint {
+    pub const ORIGIN: GPoint = GPoint { x: 0, y: 0 };
 }
 
 #[derive(Copy, Clone)]
@@ -89,10 +118,99 @@ pub enum GCompOp {
 }
 
 #[repr(C)]
-pub enum GColor {
-    GColorClear = -1,
-    GColorBlack = 0,
-    GColorWhite = 1
+pub enum GCornerMask {
+    GCornerNone = 0b0000,
+    GCornerTopLeft = 0b0001,
+    GCornerTopRight = 0b0010,
+    GCornerBottomLeft = 0b0100,
+    GCornerBottomRight = 0b1000,
+    GCornersAll = 0b1111,
+    GCornersTop = 0b0011,
+    GCornersBottom = 0b1100,
+    GCornersLeft = 0b0101,
+    GCornersRight = 0b1010,
+}
+
+#[repr(C)]
+pub enum GTextAlignment {
+    Left = 0,
+    Center = 1,
+    Right = 2,
+}
+
+/// SDK 3.x GColor — 1-byte packed ARGB (aa rr gg bb, 2 bits each).
+#[repr(transparent)]
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[allow(non_upper_case_globals)]
+pub struct GColor(pub u8);
+
+#[allow(non_upper_case_globals)]
+impl GColor {
+    pub const Clear: GColor = GColor(0x00);
+    pub const Black: GColor = GColor(0xC0);
+    pub const OxfordBlue: GColor = GColor(0xC1);
+    pub const DukeBlue: GColor = GColor(0xC2);
+    pub const Blue: GColor = GColor(0xC3);
+    pub const DarkGreen: GColor = GColor(0xC4);
+    pub const MidnightGreen: GColor = GColor(0xC5);
+    pub const CobaltBlue: GColor = GColor(0xC6);
+    pub const BlueMoon: GColor = GColor(0xC7);
+    pub const IslamicGreen: GColor = GColor(0xC8);
+    pub const JaegerGreen: GColor = GColor(0xC9);
+    pub const TiffanyBlue: GColor = GColor(0xCA);
+    pub const VividCerulean: GColor = GColor(0xCB);
+    pub const Green: GColor = GColor(0xCC);
+    pub const Malachite: GColor = GColor(0xCD);
+    pub const MediumSpringGreen: GColor = GColor(0xCE);
+    pub const Cyan: GColor = GColor(0xCF);
+    pub const BulgarianRose: GColor = GColor(0xD0);
+    pub const ImperialPurple: GColor = GColor(0xD1);
+    pub const Indigo: GColor = GColor(0xD2);
+    pub const ElectricUltramarine: GColor = GColor(0xD3);
+    pub const ArmyGreen: GColor = GColor(0xD4);
+    pub const DarkGray: GColor = GColor(0xD5);
+    pub const Liberty: GColor = GColor(0xD6);
+    pub const VeryLightBlue: GColor = GColor(0xD7);
+    pub const KellyGreen: GColor = GColor(0xD8);
+    pub const MayGreen: GColor = GColor(0xD9);
+    pub const CadetBlue: GColor = GColor(0xDA);
+    pub const PictonBlue: GColor = GColor(0xDB);
+    pub const BrightGreen: GColor = GColor(0xDC);
+    pub const ScreaminGreen: GColor = GColor(0xDD);
+    pub const MediumAquamarine: GColor = GColor(0xDE);
+    pub const ElectricBlue: GColor = GColor(0xDF);
+    pub const DarkCandyAppleRed: GColor = GColor(0xE0);
+    pub const JazzberryJam: GColor = GColor(0xE1);
+    pub const Purple: GColor = GColor(0xE2);
+    pub const VividViolet: GColor = GColor(0xE3);
+    pub const WindsorTan: GColor = GColor(0xE4);
+    pub const RoseVale: GColor = GColor(0xE5);
+    pub const Purpureus: GColor = GColor(0xE6);
+    pub const LavenderIndigo: GColor = GColor(0xE7);
+    pub const Limerick: GColor = GColor(0xE8);
+    pub const Brass: GColor = GColor(0xE9);
+    pub const LightGray: GColor = GColor(0xEA);
+    pub const BabyBlueEyes: GColor = GColor(0xEB);
+    pub const SpringBud: GColor = GColor(0xEC);
+    pub const Inchworm: GColor = GColor(0xED);
+    pub const MintGreen: GColor = GColor(0xEE);
+    pub const Celeste: GColor = GColor(0xEF);
+    pub const Red: GColor = GColor(0xF0);
+    pub const Folly: GColor = GColor(0xF1);
+    pub const FashionMagenta: GColor = GColor(0xF2);
+    pub const Magenta: GColor = GColor(0xF3);
+    pub const Orange: GColor = GColor(0xF4);
+    pub const SunsetOrange: GColor = GColor(0xF5);
+    pub const BrilliantRose: GColor = GColor(0xF6);
+    pub const ShockingPink: GColor = GColor(0xF7);
+    pub const ChromeYellow: GColor = GColor(0xF8);
+    pub const Rajah: GColor = GColor(0xF9);
+    pub const Melon: GColor = GColor(0xFA);
+    pub const RichBrilliantLavender: GColor = GColor(0xFB);
+    pub const Yellow: GColor = GColor(0xFC);
+    pub const Icterine: GColor = GColor(0xFD);
+    pub const PastelYellow: GColor = GColor(0xFE);
+    pub const White: GColor = GColor(0xFF);
 }
 
 #[repr(C)]
@@ -137,32 +255,32 @@ impl Tuple {
         let ptr = (&self.key as *const u32) as usize;
         let value_ptr = ptr + 7;
         let t = self.t_type[0];
-        match t {
-            0 => {
-                Some(TupleValue {
-                    data: core::slice::from_raw_parts(value_ptr as *const u8,
-                                                      self.t_type[1] as usize)
-                })
-            },
-            1 => {
-                Some(TupleValue {
-                    cstring: core::slice::from_raw_parts(value_ptr as *const u8,
-                                                         self.t_type[1] as usize)
-                })
-            },
-            2 => {
-                let value_ptr = value_ptr as *const u32;
-                Some(TupleValue {
-                    uint32: *value_ptr
-                })
-            },
-            3 => {
-                let value_ptr = value_ptr as *const i32;
-                Some(TupleValue {
-                    int32: *value_ptr
-                })
-            },
-            _ => {None}
+        unsafe {
+            match t {
+                0 => {
+                    Some(TupleValue {
+                        data: core::slice::from_raw_parts(value_ptr as *const u8, self.t_type[1] as usize)
+                    })
+                },
+                1 => {
+                    Some(TupleValue {
+                        cstring: core::slice::from_raw_parts(value_ptr as *const u8, self.t_type[1] as usize)
+                    })
+                },
+                2 => {
+                    let value_ptr = value_ptr as *const u32;
+                    Some(TupleValue {
+                        uint32: *value_ptr
+                    })
+                },
+                3 => {
+                    let value_ptr = value_ptr as *const i32;
+                    Some(TupleValue {
+                        int32: *value_ptr
+                    })
+                },
+                _ => {None}
+            }
         }
     }
 

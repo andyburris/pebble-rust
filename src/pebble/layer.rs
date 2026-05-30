@@ -18,12 +18,13 @@
 
 use alloc::boxed::Box;
 use core::ffi::CStr;
+use crate::pebble::internal::functions::interface::text_layer_set_background_color;
 use crate::pebble::internal::{functions::interface, types};
 use crate::pebble::internal::types::{MenuLayer as RawMenuLayer, MenuLayerCallbacks, MenuIndex};
 use crate::pebble::types::{Bitmap, GCompOp, GRect};
 use crate::system::fonts::Font;
-use crate::pebble::internal::functions::declarations::text_layer_set_text;
 use crate::pebble::window::Window;
+use crate::types::GColor;
 
 pub struct Layer {
     internal: *mut types::Layer
@@ -40,35 +41,25 @@ pub struct BitmapLayer {
 }
 
 pub trait ILayer {
-    fn get_bounds(&self) -> GRect;
-    fn get_frame(&self) -> GRect;
-    fn add_child(&self, layer: &dyn ILayer);
-    fn mark_dirty(&self);
-    fn set_hidden(&self, hidden: bool);
     fn get_internal(&self) -> *mut types::Layer;
+    fn get_bounds(&self) -> GRect {
+        interface::layer_get_bounds(self.get_internal())
+    }
+    fn get_frame(&self) -> GRect {
+        interface::layer_get_frame(self.get_internal())
+    }
+    fn add_child(&self, layer: &dyn ILayer) {
+        interface::layer_add_child(self.get_internal(), layer.get_internal())
+    }
+    fn mark_dirty(&self) {
+        interface::layer_mark_dirty(self.get_internal());
+    }
+    fn set_hidden(&self, hidden: bool) {
+        interface::layer_set_hidden(self.get_internal(), hidden);
+    }
 }
 
 impl ILayer for Layer {
-    fn get_bounds(&self) -> GRect {
-        interface::layer_get_bounds(self.internal)
-    }
-
-    fn get_frame(&self) -> GRect {
-        interface::layer_get_frame(self.internal)
-    }
-
-    fn add_child(&self, layer: &dyn ILayer) {
-        interface::layer_add_child(self.internal, layer.get_internal())
-    }
-
-    fn mark_dirty(&self) {
-        interface::layer_mark_dirty(self.internal);
-    }
-
-    fn set_hidden(&self, hidden: bool) {
-        interface::layer_set_hidden(self.internal, hidden);
-    }
-
     fn get_internal(&self) -> *mut types::Layer {
         self.internal
     }
@@ -86,29 +77,13 @@ impl Layer {
             internal: ptr
         }
     }
+
+    pub fn set_update_proc(&self, func: extern "C" fn(*mut types::Layer, *mut types::GContext)) {
+        interface::layer_set_update_proc(self.internal, func);
+    }
 }
 
 impl ILayer for TextLayer {
-    fn get_bounds(&self) -> GRect {
-        interface::layer_get_bounds(self.inner)
-    }
-
-    fn get_frame(&self) -> GRect {
-        interface::layer_get_frame(self.inner)
-    }
-
-    fn add_child(&self, layer: &dyn ILayer) {
-        interface::layer_add_child(self.inner, layer.get_internal());
-    }
-
-    fn mark_dirty(&self) {
-        interface::layer_mark_dirty(self.inner);
-    }
-
-    fn set_hidden(&self, hidden: bool) {
-        interface::layer_set_hidden(self.inner, hidden);
-    }
-
     fn get_internal(&self) -> *mut types::Layer {
         self.inner
     }
@@ -117,6 +92,7 @@ impl ILayer for TextLayer {
 impl TextLayer {
     pub fn new(bounds: GRect) -> TextLayer {
         let internal = interface::text_layer_create(bounds);
+        text_layer_set_background_color(internal, GColor::Clear);
         let inner = interface::text_layer_get_layer(internal);
 
         TextLayer {
@@ -131,29 +107,21 @@ impl TextLayer {
     pub fn set_font(&self, font: Font) {
         interface::text_layer_set_font(self.internal, font.internal)
     }
+
+    pub fn set_background_color(&self, color: types::GColor) {
+        interface::text_layer_set_background_color(self.internal, color);
+    }
+
+    pub fn set_text_color(&self, color: types::GColor) {
+        interface::text_layer_set_text_color(self.internal, color);
+    }
+
+    pub fn set_text_alignment(&self, alignment: types::GTextAlignment) {
+        interface::text_layer_set_text_alignment(self.internal, alignment);
+    }
 }
 
 impl ILayer for BitmapLayer {
-    fn get_bounds(&self) -> GRect {
-        interface::layer_get_bounds(self.inner)
-    }
-
-    fn get_frame(&self) -> GRect {
-        interface::layer_get_frame(self.inner)
-    }
-
-    fn add_child(&self, layer: &dyn ILayer) {
-        interface::layer_add_child(self.inner, layer.get_internal())
-    }
-
-    fn mark_dirty(&self) {
-        interface::layer_mark_dirty(self.inner)
-    }
-
-    fn set_hidden(&self, hidden: bool) {
-        interface::layer_set_hidden(self.inner, hidden)
-    }
-
     fn get_internal(&self) -> *mut types::Layer {
         self.inner
     }
@@ -185,11 +153,6 @@ pub struct MenuLayer<T> {
 }
 
 impl<T> ILayer for MenuLayer<T> {
-    fn get_bounds(&self) -> GRect { interface::layer_get_bounds(self.inner) }
-    fn get_frame(&self) -> GRect { interface::layer_get_frame(self.inner) }
-    fn add_child(&self, layer: &dyn ILayer) { interface::layer_add_child(self.inner, layer.get_internal()) }
-    fn mark_dirty(&self) { interface::layer_mark_dirty(self.inner) }
-    fn set_hidden(&self, hidden: bool) { interface::layer_set_hidden(self.inner, hidden) }
     fn get_internal(&self) -> *mut types::Layer { self.inner }
 }
 
@@ -225,6 +188,42 @@ impl<T> MenuLayer<T> {
     pub fn reload_data(&self) {
         interface::menu_layer_reload_data(self.internal);
     }
+}
+
+// ── DrawLayer ─────────────────────────────────────────────────────────────────
+
+struct DrawLayerContext<T> {
+    context: *mut T,
+    draw: fn(&mut types::GContext, &T, GRect),
+    frame: GRect,
+}
+
+pub struct DrawLayer<T> {
+    internal: *mut types::Layer,
+    _ctx: Box<DrawLayerContext<T>>,
+}
+
+impl<T> ILayer for DrawLayer<T> {
+    fn get_internal(&self) -> *mut types::Layer { self.internal }
+}
+
+impl<T> DrawLayer<T> {
+    pub fn new(frame: GRect, context: *mut T, draw: fn(&mut types::GContext, &T, GRect)) -> DrawLayer<T> {
+        let internal = interface::layer_create_with_data(frame, core::mem::size_of::<*mut DrawLayerContext<T>>());
+        let ctx = Box::new(DrawLayerContext { context, draw, frame });
+        let ctx_ptr = Box::into_raw(ctx);
+        // Store a pointer to the context in the layer's extra data bytes
+        let data = interface::layer_get_data(internal) as *mut *mut DrawLayerContext<T>;
+        unsafe { *data = ctx_ptr; }
+        interface::layer_set_update_proc(internal, draw_trampoline::<T>);
+        DrawLayer { internal, _ctx: unsafe { Box::from_raw(ctx_ptr) } }
+    }
+}
+
+extern "C" fn draw_trampoline<T>(layer: *mut types::Layer, ctx: *mut types::GContext) {
+    let data = interface::layer_get_data(layer) as *const *mut DrawLayerContext<T>;
+    let draw_ctx = unsafe { &**data };
+    (draw_ctx.draw)(unsafe { &mut *ctx }, unsafe { &*draw_ctx.context }, draw_ctx.frame);
 }
 
 pub const MENU_CELL_BASIC_HEADER_HEIGHT: i16 = 16;

@@ -116,6 +116,18 @@ pub fn layer_create(bounds: GRect) -> *mut Layer {
     }
 }
 
+pub fn layer_create_with_data(bounds: GRect, data_size: usize) -> *mut Layer {
+    unsafe {
+        declarations::layer_create_with_data(bounds, data_size)
+    }
+}
+
+pub fn layer_get_data(layer: *const Layer) -> *mut c_void {
+    unsafe {
+        declarations::layer_get_data(layer)
+    }
+}
+
 pub fn layer_destroy(layer: *mut Layer) {
     unsafe {
         declarations::layer_destroy(layer);
@@ -182,6 +194,18 @@ pub fn text_layer_get_layer(layer: *mut TextLayer) -> *mut Layer {
     }
 }
 
+pub fn text_layer_set_background_color(layer: *mut TextLayer, color: GColor) {
+    unsafe { declarations::text_layer_set_background_color(layer, color); }
+}
+
+pub fn text_layer_set_text_color(layer: *mut TextLayer, color: GColor) {
+    unsafe { declarations::text_layer_set_text_color(layer, color); }
+}
+
+pub fn text_layer_set_text_alignment(layer: *mut TextLayer, alignment: GTextAlignment) {
+    unsafe { declarations::text_layer_set_text_alignment(layer, alignment); }
+}
+
 pub fn gbitmap_create_with_resource(id: u32) -> *mut GBitmap {
     unsafe {
         declarations::gbitmap_create_with_resource(id)
@@ -218,10 +242,43 @@ pub fn graphics_context_set_fill_color(ctx: *mut GContext, color: GColor) {
     }
 }
 
+pub fn graphics_context_set_stroke_color(ctx: *mut GContext, color: GColor) {
+    unsafe {
+        declarations::graphics_context_set_stroke_color(ctx, color);
+    }
+}
+
+pub fn graphics_context_set_stroke_width(ctx: *mut GContext, stroke_width: u8) {
+    unsafe {
+        declarations::graphics_context_set_stroke_width(ctx, stroke_width);
+    }
+}
+
 pub fn graphics_fill_circle(ctx: *mut GContext, center: GPoint, radius: u16) {
     unsafe {
         declarations::graphics_fill_circle(ctx, center, radius);
     }
+}
+
+pub fn graphics_fill_rect(ctx: *mut GContext, rect: GRect, corner_radius: u16, corner_mask: GCornerMask) {
+    unsafe {
+        declarations::graphics_fill_rect(ctx, rect, corner_radius, corner_mask);
+    }
+}
+
+
+pub fn graphics_draw_line(ctx: *mut GContext, p0: GPoint, p1: GPoint) {
+    unsafe {
+        declarations::graphics_draw_line(ctx, p0, p1);
+    }
+}
+
+pub fn sin_lookup(angle: i32) -> i32 {
+    unsafe { declarations::sin_lookup(angle) }
+}
+
+pub fn cos_lookup(angle: i32) -> i32 {
+    unsafe { declarations::cos_lookup(angle) }
 }
 
 pub fn clock_is_24h_style() -> bool {
