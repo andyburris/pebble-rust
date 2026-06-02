@@ -110,6 +110,12 @@ pub fn window_single_click_subscribe<T>(button: u8, func: extern "C" fn(*mut Cli
     }
 }
 
+pub fn window_long_click_subscribe<T>(button: u8, handler: extern "C" fn(*mut ClickRecognizer, *mut T)) {
+    unsafe {
+        declarations::window_long_click_subscribe(button, 0, Some(mem::transmute(handler)), None);
+    }
+}
+
 pub fn layer_create(bounds: GRect) -> *mut Layer {
     unsafe {
         declarations::layer_create(bounds)
@@ -242,6 +248,12 @@ pub fn graphics_context_set_fill_color(ctx: *mut GContext, color: GColor) {
     }
 }
 
+pub fn graphics_context_set_text_color(ctx: *mut GContext, color: GColor) {
+    unsafe {
+        declarations::graphics_context_set_text_color(ctx, color);
+    }
+}
+
 pub fn graphics_context_set_stroke_color(ctx: *mut GContext, color: GColor) {
     unsafe {
         declarations::graphics_context_set_stroke_color(ctx, color);
@@ -270,6 +282,18 @@ pub fn graphics_fill_rect(ctx: *mut GContext, rect: GRect, corner_radius: u16, c
 pub fn graphics_draw_line(ctx: *mut GContext, p0: GPoint, p1: GPoint) {
     unsafe {
         declarations::graphics_draw_line(ctx, p0, p1);
+    }
+}
+
+pub fn graphics_draw_text(ctx: *mut GContext, text: &CStr, font: GFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) {
+    unsafe {
+        declarations::graphics_draw_text(ctx, text.as_ptr() as *const u8, font, rect, overflow, alignment, core::ptr::null_mut());
+    }
+}
+
+pub fn graphics_text_layout_get_content_size(text: &CStr, font: GFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) -> GSize {
+    unsafe {
+        declarations::graphics_text_layout_get_content_size(text.as_ptr() as *const u8, font, rect, overflow, alignment)
     }
 }
 

@@ -26,7 +26,7 @@
 
 #![allow(non_camel_case_types)]
 
-use crate::pebble::internal::functions::{interface::{graphics_context_set_fill_color, graphics_context_set_stroke_color, graphics_context_set_stroke_width, graphics_draw_line, graphics_fill_circle, graphics_fill_rect}};
+use crate::pebble::internal::functions::{interface::{graphics_context_set_fill_color, graphics_context_set_stroke_color, graphics_context_set_stroke_width, graphics_context_set_text_color, graphics_draw_line, graphics_draw_text, graphics_fill_circle, graphics_fill_rect, graphics_text_layout_get_content_size}};
 
 pub enum Window {}
 pub enum Layer {}
@@ -42,6 +42,9 @@ impl GContext {
     pub fn set_stroke_color(&mut self, color: GColor) {
         graphics_context_set_stroke_color(self, color);
     }
+    pub fn set_text_color(&mut self, color: GColor) {
+        graphics_context_set_text_color(self, color);
+    }
     pub fn set_stroke_width(&mut self, stroke_width: u8) {
         graphics_context_set_stroke_width(self, stroke_width);
     }
@@ -54,6 +57,17 @@ impl GContext {
 
     pub fn draw_line(&mut self, p0: GPoint, p1: GPoint) {
         graphics_draw_line(self, p0, p1);
+    }
+    pub fn draw_text(&mut self, text: &core::ffi::CStr, font: GFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) {
+        graphics_draw_text(self, text, font, rect, overflow, alignment);
+    }
+    pub fn measure_text(&self, text: &core::ffi::CStr, font: GFont, max_size: GSize) -> GSize {
+        graphics_text_layout_get_content_size(
+            text, font,
+            GRect { origin: GPoint::ORIGIN, size: max_size },
+            GTextOverflowMode::TrailingEllipsis,
+            GTextAlignment::Left,
+        )
     }
 }
 
@@ -136,6 +150,13 @@ pub enum GTextAlignment {
     Left = 0,
     Center = 1,
     Right = 2,
+}
+
+#[repr(C)]
+pub enum GTextOverflowMode {
+    WordWrap = 0,
+    TrailingEllipsis = 1,
+    Fill = 2,
 }
 
 /// SDK 3.x GColor — 1-byte packed ARGB (aa rr gg bb, 2 bits each).

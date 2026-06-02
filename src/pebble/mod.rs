@@ -19,6 +19,7 @@
 mod internal;
 
 pub mod app;
+pub mod click;
 pub mod window;
 pub mod types;
 pub mod layer;

@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-pub use crate::pebble::internal::types::{GColor, GRect, GPoint, GSize, GCornerMask, GTextAlignment, tm, TimeUnits, GCompOp, AppMessageResult,
+pub use crate::pebble::internal::types::{GColor, GRect, GPoint, GSize, GCornerMask, GTextAlignment, GTextOverflowMode, tm, TimeUnits, GCompOp, AppMessageResult,
                                          Tuple, TupleValue, MenuIndex, MenuLayerCallbacks, GBitmap};
 use crate::pebble::internal::functions::{interface, declarations};
 
