@@ -18,6 +18,7 @@
 
 mod internal;
 
+pub mod animation;
 pub mod app;
 pub mod click;
 pub mod window;

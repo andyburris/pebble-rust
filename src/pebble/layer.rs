@@ -194,7 +194,7 @@ impl<T> MenuLayer<T> {
 
 struct DrawLayerContext<T> {
     context: *mut T,
-    draw: fn(&mut types::GContext, &T, GRect),
+    draw: fn(&mut types::GContext, &mut T, GRect),
     frame: GRect,
 }
 
@@ -208,7 +208,7 @@ impl<T> ILayer for DrawLayer<T> {
 }
 
 impl<T> DrawLayer<T> {
-    pub fn new(frame: GRect, context: *mut T, draw: fn(&mut types::GContext, &T, GRect)) -> DrawLayer<T> {
+    pub fn new(frame: GRect, context: *mut T, draw: fn(&mut types::GContext, &mut T, GRect)) -> DrawLayer<T> {
         let internal = interface::layer_create_with_data(frame, core::mem::size_of::<*mut DrawLayerContext<T>>());
         let ctx = Box::new(DrawLayerContext { context, draw, frame });
         let ctx_ptr = Box::into_raw(ctx);
@@ -223,7 +223,7 @@ impl<T> DrawLayer<T> {
 extern "C" fn draw_trampoline<T>(layer: *mut types::Layer, ctx: *mut types::GContext) {
     let data = interface::layer_get_data(layer) as *const *mut DrawLayerContext<T>;
     let draw_ctx = unsafe { &**data };
-    (draw_ctx.draw)(unsafe { &mut *ctx }, unsafe { &*draw_ctx.context }, draw_ctx.frame);
+    (draw_ctx.draw)(unsafe { &mut *ctx }, unsafe { &mut *draw_ctx.context }, draw_ctx.frame);
 }
 
 pub const MENU_CELL_BASIC_HEADER_HEIGHT: i16 = 16;

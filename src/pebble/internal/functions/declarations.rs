@@ -176,4 +176,16 @@ unsafe extern "C" {
     pub unsafe fn menu_layer_reload_data(menu_layer: *mut MenuLayer);
     pub unsafe fn menu_cell_basic_draw(ctx: *mut GContext, cell_layer: *const Layer, title: *const c_char, subtitle: *const c_char, icon: *mut GBitmap);
     pub unsafe fn menu_cell_basic_header_draw(ctx: *mut GContext, cell_layer: *const Layer, title: *const c_char);
+
+    // Animation
+    pub unsafe fn animation_create() -> *mut Animation;
+    pub unsafe fn animation_destroy(animation: *mut Animation) -> bool;
+    pub unsafe fn animation_schedule(animation: *mut Animation) -> bool;
+    pub unsafe fn animation_unschedule(animation: *mut Animation) -> bool;
+    pub unsafe fn animation_set_duration(animation: *mut Animation, duration_ms: u32);
+    pub unsafe fn animation_set_delay(animation: *mut Animation, delay_ms: u32);
+    pub unsafe fn animation_set_curve(animation: *mut Animation, curve: AnimationCurve);
+    pub unsafe fn animation_set_handlers(animation: *mut Animation, handlers: AnimationHandlers, context: *mut u8);
+    pub unsafe fn animation_get_context(animation: *const Animation) -> *mut u8;
+    pub unsafe fn animation_set_implementation(animation: *mut Animation, implementation: *const AnimationImplementation);
 }

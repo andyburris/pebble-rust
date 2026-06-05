@@ -410,3 +410,29 @@ pub struct MenuLayerCallbacks {
     pub selection_will_change: Option<extern "C" fn(*mut u8, *mut MenuIndex, MenuIndex, *mut ())>,
     pub draw_background:       Option<extern "C" fn(*mut GContext, *const Layer, bool, *mut ())>,
 }
+
+pub enum Animation {}
+
+pub type AnimationProgress = u32;
+pub const ANIMATION_NORMALIZED_MAX: AnimationProgress = 65535;
+
+#[repr(C)]
+pub enum AnimationCurve {
+    EaseIn    = 0,
+    EaseOut   = 1,
+    EaseInOut = 2,
+    Linear    = 3,
+}
+
+#[repr(C)]
+pub struct AnimationImplementation {
+    pub setup:    Option<extern "C" fn(*mut Animation)>,
+    pub update:   Option<extern "C" fn(*mut Animation, AnimationProgress)>,
+    pub teardown: Option<extern "C" fn(*mut Animation)>,
+}
+
+#[repr(C)]
+pub struct AnimationHandlers {
+    pub started: Option<extern "C" fn(*mut Animation, *mut u8)>,
+    pub stopped: Option<extern "C" fn(*mut Animation, bool, *mut u8)>,
+}

@@ -382,3 +382,43 @@ pub fn menu_cell_basic_draw(ctx: *mut GContext, cell: *const Layer, title: &CStr
 pub fn menu_cell_basic_header_draw(ctx: *mut GContext, cell: *const Layer, title: &CStr) {
     unsafe { declarations::menu_cell_basic_header_draw(ctx, cell, title.as_ptr() as *const u8); }
 }
+
+pub fn animation_create() -> *mut Animation {
+    unsafe { declarations::animation_create() }
+}
+
+pub fn animation_destroy(animation: *mut Animation) -> bool {
+    unsafe { declarations::animation_destroy(animation) }
+}
+
+pub fn animation_schedule(animation: *mut Animation) -> bool {
+    unsafe { declarations::animation_schedule(animation) }
+}
+
+pub fn animation_unschedule(animation: *mut Animation) -> bool {
+    unsafe { declarations::animation_unschedule(animation) }
+}
+
+pub fn animation_set_duration(animation: *mut Animation, duration_ms: u32) {
+    unsafe { declarations::animation_set_duration(animation, duration_ms) }
+}
+
+pub fn animation_set_delay(animation: *mut Animation, delay_ms: u32) {
+    unsafe { declarations::animation_set_delay(animation, delay_ms) }
+}
+
+pub fn animation_set_curve(animation: *mut Animation, curve: AnimationCurve) {
+    unsafe { declarations::animation_set_curve(animation, curve) }
+}
+
+pub fn animation_set_handlers(animation: *mut Animation, handlers: AnimationHandlers, context: *mut u8) {
+    unsafe { declarations::animation_set_handlers(animation, handlers, context) }
+}
+
+pub fn animation_get_context<T>(animation: *const Animation) -> *mut T {
+    unsafe { declarations::animation_get_context(animation) as *mut T }
+}
+
+pub fn animation_set_implementation(animation: *mut Animation, implementation: *const AnimationImplementation) {
+    unsafe { declarations::animation_set_implementation(animation, implementation) }
+}
