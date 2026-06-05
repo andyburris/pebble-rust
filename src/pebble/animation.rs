@@ -80,8 +80,10 @@ pub trait Interpolatable: Copy + PartialEq {
 
 impl Interpolatable for i32 {
     fn interpolate(from: i32, to: i32, progress: AnimationProgress) -> i32 {
-        let (f, t) = (from as i64, to as i64);
-        (f + (t - f) * progress as i64 / ANIMATION_NORMALIZED_MAX as i64) as i32
+        // Shift progress right by 1 (0..32767) so delta*p fits in i32 when |delta| <= TRIG_MAX_ANGLE
+        let delta = to - from;
+        let p = (progress >> 1) as i32;
+        from + delta * p / (ANIMATION_NORMALIZED_MAX as i32 >> 1)
     }
 }
 
