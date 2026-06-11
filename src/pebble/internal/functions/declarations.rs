@@ -85,6 +85,15 @@ unsafe extern "C" {
     pub unsafe fn graphics_draw_text(ctx: *mut GContext, text: *const c_char, font: GFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment, text_attributes: *mut c_void);
     pub unsafe fn graphics_text_layout_get_content_size(text: *const c_char, font: GFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) -> GSize;
 
+    // GPath
+    pub unsafe fn gpath_create(init: *const GPathInfo) -> *mut GPathRaw;
+    pub unsafe fn gpath_destroy(path: *mut GPathRaw);
+    pub unsafe fn gpath_draw_filled(ctx: *mut GContext, path: *const GPathRaw);
+    pub unsafe fn gpath_draw_outline(ctx: *mut GContext, path: *const GPathRaw);
+    pub unsafe fn gpath_draw_outline_open(ctx: *mut GContext, path: *const GPathRaw);
+    pub unsafe fn gpath_move_to(path: *mut GPathRaw, point: GPoint);
+    pub unsafe fn gpath_rotate_to(path: *mut GPathRaw, angle: i32);
+
     // Trig
     pub unsafe fn sin_lookup(angle: i32) -> i32;
     pub unsafe fn cos_lookup(angle: i32) -> i32;

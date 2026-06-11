@@ -71,6 +71,20 @@ impl GContext {
     }
 }
 
+#[repr(C)]
+pub struct GPathInfo {
+    pub num_points: u32,
+    pub points: *const GPoint,
+}
+
+#[repr(C)]
+pub struct GPathRaw {
+    pub num_points: u32,
+    pub points: *const GPoint,
+    pub rotation: i32,
+    pub offset: GPoint,
+}
+
 pub enum BitmapLayer {}
 pub enum MenuLayer {}
 

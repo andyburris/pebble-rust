@@ -297,6 +297,34 @@ pub fn graphics_text_layout_get_content_size(text: &CStr, font: GFont, rect: GRe
     }
 }
 
+pub fn gpath_create(init: *const GPathInfo) -> *mut GPathRaw {
+    unsafe { declarations::gpath_create(init) }
+}
+
+pub fn gpath_destroy(path: *mut GPathRaw) {
+    unsafe { declarations::gpath_destroy(path); }
+}
+
+pub fn gpath_draw_filled(ctx: *mut GContext, path: *const GPathRaw) {
+    unsafe { declarations::gpath_draw_filled(ctx, path); }
+}
+
+pub fn gpath_draw_outline(ctx: *mut GContext, path: *const GPathRaw) {
+    unsafe { declarations::gpath_draw_outline(ctx, path); }
+}
+
+pub fn gpath_draw_outline_open(ctx: *mut GContext, path: *const GPathRaw) {
+    unsafe { declarations::gpath_draw_outline_open(ctx, path); }
+}
+
+pub fn gpath_move_to(path: *mut GPathRaw, point: GPoint) {
+    unsafe { declarations::gpath_move_to(path, point); }
+}
+
+pub fn gpath_rotate_to(path: *mut GPathRaw, angle: i32) {
+    unsafe { declarations::gpath_rotate_to(path, angle); }
+}
+
 pub fn sin_lookup(angle: i32) -> i32 {
     unsafe { declarations::sin_lookup(angle) }
 }
