@@ -30,6 +30,7 @@ pub mod app_message;
 pub mod event;
 pub mod clock;
 pub mod platform;
+mod platform_stubs;
 
 pub use internal::alloc;
 

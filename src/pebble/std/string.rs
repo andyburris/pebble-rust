@@ -60,3 +60,25 @@ unsafe fn ptr_to_str<'a>(ptr: *const u8) -> &'a str {
     let slc = core::slice::from_raw_parts(ptr, 5);
     core::str::from_utf8_unchecked(slc)
 }
+
+// ── CString helpers ───────────────────────────────────────────────────────────
+
+/// Converts a `&str` or `String` to an owned null-terminated `CString`.
+/// Strips a trailing `\0` first so calling it on already-terminated strings
+/// is idempotent.
+pub trait ToCString {
+    fn to_cstring(&self) -> alloc::ffi::CString;
+}
+
+impl ToCString for str {
+    fn to_cstring(&self) -> alloc::ffi::CString {
+        let bytes = self.as_bytes();
+        let mut len = bytes.len();
+        while len > 0 && bytes[len - 1] == 0 { len -= 1; }
+        let mut v = alloc::vec::Vec::with_capacity(len + 1);
+        v.extend_from_slice(&bytes[..len]);
+        v.push(0);
+        // Safety: v ends with exactly one nul; strings without interior nuls are assumed
+        unsafe { alloc::ffi::CString::from_vec_with_nul_unchecked(v) }
+    }
+}

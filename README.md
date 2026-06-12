@@ -1,44 +1,70 @@
 # Pebble bindings for Rust
-[![Build status](https://api.travis-ci.org/pebble-rust/pebble-rust.svg?branch=master)](https://travis-ci.org/pebble-rust/pebble-rust)
-[![DL](https://img.shields.io/crates/d/pebble-rust.svg?color=green&label=Downloads%20%40%20Crates.io)](https://crates.io/crates/pebble-rust)
-[![Crate](https://img.shields.io/crates/v/pebble-rust.svg)](https://crates.io/crates/pebble-rust)
-![License](https://img.shields.io/crates/l/pebble-rust.svg)
 
 This crate provides a subset of the [Pebble SDK](https://developer.rebble.io), using somewhat modern [Rust](https://rust-lang.org).
 
 ## [Documentation](https://docs.rs/pebble-rust)
-## [Troubleshooting](docs/TROUBLESHOOTING.md)
 ### [Caveats and Limitations](docs/CAVEATS.md)
 
 ## Usage
-I recommend looking at the [examples](examples) for instructions.
-Please note that the following tools are needed:
-* `arm-none-eabi` GNU toolchain (the Pebble SDK comes with one);
-* `thumbv7m-none-eabi` Rust target (`rustup target add thumbv7m-none-eabi`);
-* LLC (LLVM compiler).
 
-Building is done through the `build.sh` file.
-Once the build is complete, you can install the app using `pebble install`.
+Look at the [examples](examples) to get started. Three examples are included:
+
+| Example | Description |
+| ------- | ----------- |
+| [hello-world](examples/hello-world) | Basic window with a TextLayer |
+| [bitmap](examples/bitmap) | Display a PNG resource with BitmapLayer |
+| [js-appmessage](examples/js-appmessage) | AppMessage communication between watch (Rust) and phone (TypeScript) |
+
+### Requirements
+
+* [Pebble SDK](https://developer.rebble.io/developer.pebble.com/sdk/download/index.html) (includes the `arm-none-eabi` toolchain)
+* Rust nightly with the `thumbv7m-none-eabi` target:
+  ```
+  rustup target add thumbv7m-none-eabi
+  ```
+* [Bun](https://bun.sh) or Node — for the js-appmessage example's TypeScript build step
+
+### Building
+
+Each example has a `build.sh` that handles the full pipeline:
+
+```sh
+./build.sh
+```
+
+Once built, install to an emulator or device with:
+
+```sh
+pebble install --emulator basalt
+pebble logs --emulator basalt
+```
 
 ## Roadmap
+
 | Feature | Priority | Done? |
 | ------- | -------- | ----- |
-| App | - | Yes
-| Window | - | Yes
-| C STL (`pebble::std`) | - | Yes
-| Dictionary, AppMessage | - | Yes
-| Fonts | - | Yes
-| Events | Medium | Partially
-| Layer | Medium | Partially
-| Click handler | Medium | No
-| Animations | Low | No
+| App | - | Yes |
+| Window | - | Yes |
+| C STL (`pebble::std`) | - | Yes |
+| Dictionary, AppMessage | - | Yes |
+| Fonts | - | Yes |
+| Click handler | Medium | Yes |
+| Animations | Low | Yes |
+| Events | Medium | Partially |
+| Layer | Medium | Partially |
+
+## Library crates
+
+Two higher-level crates build on top of pebble-rust:
+
+* **[taconite](../taconite)** — reactive screen framework (typed state, auto-render, AppMessage routing)
+* **[pebble-transit](../../pebble-transit)** — example app using taconite
 
 ## License
+
 This project is licensed under **both** the [GPLv3](LICENSE-GPLv3) and [BSD-3-Clause](LICENSE-BSD-3.0) licenses.
 Derivatives of this project should comply with both.
 
 ## Credits
-Special thanks to [andars](https://github.com/andars). This project uses some files of their [pebble.rs](https://github.com/andars/pebble.rs) project.
 
-## Support
-You can support the project on [Patreon](https://patreon.com/RoccoDev) or [Liberapay](https://liberapay.com/RoccoDev).
+Special thanks to [andars](https://github.com/andars). This project uses some files of their [pebble.rs](https://github.com/andars/pebble.rs) project.

@@ -2,7 +2,12 @@
   "version": "1.0.0",
   "author": "RoccoDev",
   "private": true,
-  "dependencies": {},
+  "scripts": {
+    "build": "./build.sh"
+  },
+  "dependencies": {
+    "pkts": "^0.3.0-beta.1"
+  },
   "keywords": [
     "pebble-app"
   ],

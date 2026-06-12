@@ -2,7 +2,7 @@
 name = "bitmap"
 version = "0.1.0"
 authors = ["RoccoDev <roccodev.business@gmail.com>"]
-edition = "2018"
+edition = "2024"
 
 [lib]
 crate-type = ["staticlib"]
