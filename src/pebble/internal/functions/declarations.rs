@@ -79,6 +79,8 @@ unsafe extern "C" {
     pub unsafe fn graphics_context_set_text_color(ctx: *mut GContext, color: GColor);
     pub unsafe fn graphics_context_set_stroke_color(ctx: *mut GContext, color: GColor);
     pub unsafe fn graphics_context_set_stroke_width(ctx: *mut GContext, stroke_width: u8);
+    pub unsafe fn graphics_context_set_compositing_mode(ctx: *mut GContext, mode: GCompOp);
+    pub unsafe fn graphics_draw_bitmap_in_rect(ctx: *mut GContext, bitmap: *const GBitmap, dest_rect: GRect);
     pub unsafe fn graphics_fill_circle(ctx: *mut GContext, center: GPoint, radius: u16);
     pub unsafe fn graphics_fill_rect(ctx: *mut GContext, rect: GRect, corner_radius: u16, corner_mask: GCornerMask);
     pub unsafe fn graphics_draw_line(ctx: *mut GContext, p0: GPoint, p1: GPoint);

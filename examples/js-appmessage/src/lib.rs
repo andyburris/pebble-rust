@@ -15,7 +15,6 @@ use crate::pebble::std::ToCString;
 const MESSAGE_KEY_EXAMPLE: u32 = 1768777472;
 
 // THIS WORKS FOR THE DEMO BUT IS NOT GOOD PRACTICE
-// check out taconite for a more idiomatic Pebble UI framework for Rust
 static mut TEXT_LAYER: Option<TextLayer> = None;
 
 #[unsafe(no_mangle)]

@@ -322,7 +322,7 @@ extern "C" fn trampoline_draw_background<T>(gctx: *mut types::GContext, cell: *c
     if let Some(f) = c.callbacks.draw_background { f(gctx, cell, highlighted, unsafe { &*c.context }) }
 }
 
-pub fn menu_cell_basic_draw(ctx: *mut types::GContext, cell: *const types::Layer, title: &CStr, subtitle: &CStr, icon: Option<*mut types::GBitmap>) {
+pub fn menu_cell_basic_draw(ctx: *mut types::GContext, cell: *const types::Layer, title: Option<&CStr>, subtitle: Option<&CStr>, icon: Option<*mut types::GBitmap>) {
     interface::menu_cell_basic_draw(ctx, cell, title, subtitle, icon);
 }
 

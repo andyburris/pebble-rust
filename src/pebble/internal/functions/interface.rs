@@ -266,6 +266,18 @@ pub fn graphics_context_set_stroke_width(ctx: *mut GContext, stroke_width: u8) {
     }
 }
 
+pub fn graphics_context_set_compositing_mode(ctx: *mut GContext, mode: GCompOp) {
+    unsafe {
+        declarations::graphics_context_set_compositing_mode(ctx, mode);
+    }
+}
+
+pub fn graphics_draw_bitmap_in_rect(ctx: *mut GContext, bitmap: *const GBitmap, dest_rect: GRect) {
+    unsafe {
+        declarations::graphics_draw_bitmap_in_rect(ctx, bitmap, dest_rect);
+    }
+}
+
 pub fn graphics_fill_circle(ctx: *mut GContext, center: GPoint, radius: u16) {
     unsafe {
         declarations::graphics_fill_circle(ctx, center, radius);
@@ -397,11 +409,12 @@ pub fn menu_layer_reload_data(menu_layer: *mut MenuLayer) {
     unsafe { declarations::menu_layer_reload_data(menu_layer); }
 }
 
-pub fn menu_cell_basic_draw(ctx: *mut GContext, cell: *const Layer, title: &CStr, subtitle: &CStr, icon: Option<*mut GBitmap>) {
+pub fn menu_cell_basic_draw(ctx: *mut GContext, cell: *const Layer, title: Option<&CStr>, subtitle: Option<&CStr>, icon: Option<*mut GBitmap>) {
     unsafe {
         declarations::menu_cell_basic_draw(
             ctx, cell,
-            title.as_ptr() as *const u8, subtitle.as_ptr() as *const u8,
+            title.map_or(core::ptr::null_mut(), |mut t| t.as_ptr() as *const u8),
+            subtitle.map_or(core::ptr::null_mut(), |mut s| s.as_ptr() as *const u8),
             icon.unwrap_or(core::ptr::null_mut()),
         );
     }

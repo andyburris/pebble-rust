@@ -26,7 +26,7 @@
 
 #![allow(non_camel_case_types)]
 
-use crate::pebble::internal::functions::{interface::{graphics_context_set_fill_color, graphics_context_set_stroke_color, graphics_context_set_stroke_width, graphics_context_set_text_color, graphics_draw_line, graphics_draw_text, graphics_fill_circle, graphics_fill_rect, graphics_text_layout_get_content_size}};
+use crate::pebble::internal::functions::{interface::{graphics_context_set_compositing_mode, graphics_context_set_fill_color, graphics_context_set_stroke_color, graphics_context_set_stroke_width, graphics_context_set_text_color, graphics_draw_bitmap_in_rect, graphics_draw_line, graphics_draw_text, graphics_fill_circle, graphics_fill_rect, graphics_text_layout_get_content_size}};
 
 pub enum Window {}
 pub enum Layer {}
@@ -55,6 +55,12 @@ impl GContext {
         graphics_fill_rect(self, rect, corner_radius, corner_mask);
     }
 
+    pub fn set_compositing_mode(&mut self, mode: GCompOp) {
+        graphics_context_set_compositing_mode(self, mode);
+    }
+    pub fn draw_bitmap_in_rect(&mut self, bitmap: *const GBitmap, dest_rect: GRect) {
+        graphics_draw_bitmap_in_rect(self, bitmap, dest_rect);
+    }
     pub fn draw_line(&mut self, p0: GPoint, p1: GPoint) {
         graphics_draw_line(self, p0, p1);
     }

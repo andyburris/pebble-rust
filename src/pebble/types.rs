@@ -26,6 +26,7 @@ use crate::pebble::internal::functions::{interface, declarations};
 pub type VoidPtr = *const crate::pebble::internal::types::c_void;
 pub type DictPtr = *mut crate::pebble::internal::types::DictionaryIterator;
 
+#[derive(Clone)]
 pub struct Bitmap {
     pub internal: *mut GBitmap
 }
