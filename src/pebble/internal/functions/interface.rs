@@ -405,6 +405,14 @@ pub fn menu_layer_set_click_config_onto_window(menu_layer: *mut MenuLayer, windo
     unsafe { declarations::menu_layer_set_click_config_onto_window(menu_layer, window); }
 }
 
+pub fn menu_layer_set_highlight_colors(menu_layer: *mut MenuLayer, background: GColor, foreground: GColor) {
+    unsafe { declarations::menu_layer_set_highlight_colors(menu_layer, background, foreground); }
+}
+
+pub fn menu_layer_set_normal_colors(menu_layer: *mut MenuLayer, background: GColor, foreground: GColor) {
+    unsafe { declarations::menu_layer_set_normal_colors(menu_layer, background, foreground); }
+}
+
 pub fn menu_layer_reload_data(menu_layer: *mut MenuLayer) {
     unsafe { declarations::menu_layer_reload_data(menu_layer); }
 }

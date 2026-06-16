@@ -181,6 +181,15 @@ impl<T> MenuLayer<T> {
         MenuLayer { internal, inner, _ctx: ctx }
     }
 
+    pub fn set_normal_colors(&self, background: GColor, foreground: GColor) {
+        interface::menu_layer_set_normal_colors(self.internal, background, foreground);
+    }
+
+    pub fn set_highlight_colors(&self, background: GColor, foreground: GColor) {
+        interface::menu_layer_set_highlight_colors(self.internal, background, foreground);
+    }
+
+
     pub fn set_click_config_onto_window(&self, window: &Window) {
         interface::menu_layer_set_click_config_onto_window(self.internal, window.raw());
     }

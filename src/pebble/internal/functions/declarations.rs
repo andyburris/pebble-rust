@@ -184,6 +184,8 @@ unsafe extern "C" {
     pub unsafe fn menu_layer_get_layer(menu_layer: *mut MenuLayer) -> *mut Layer;
     pub unsafe fn menu_layer_set_callbacks(menu_layer: *mut MenuLayer, callback_context: *mut c_void, callbacks: MenuLayerCallbacks);
     pub unsafe fn menu_layer_set_click_config_onto_window(menu_layer: *mut MenuLayer, window: *mut Window);
+    pub unsafe fn menu_layer_set_highlight_colors(menu_layer: *mut MenuLayer, background: GColor, foreground: GColor);
+    pub unsafe fn menu_layer_set_normal_colors(menu_layer: *mut MenuLayer, background: GColor, foreground: GColor);
     pub unsafe fn menu_layer_reload_data(menu_layer: *mut MenuLayer);
     pub unsafe fn menu_cell_basic_draw(ctx: *mut GContext, cell_layer: *const Layer, title: *const c_char, subtitle: *const c_char, icon: *mut GBitmap);
     pub unsafe fn menu_cell_basic_header_draw(ctx: *mut GContext, cell_layer: *const Layer, title: *const c_char);
