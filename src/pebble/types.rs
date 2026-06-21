@@ -17,24 +17,24 @@
  */
 
 pub use crate::pebble::internal::types::{GColor, GRect, GPoint, GSize, GCornerMask, GTextAlignment, GTextOverflowMode, tm, TimeUnits, GCompOp, AppMessageResult,
-                                         Tuple, TupleValue, MenuIndex, MenuLayerCallbacks, GBitmap,
+                                         Tuple, TupleValue, MenuIndex, MenuRowAlign, MenuLayerCallbacks, RawGBitmap,
                                          AnimationCurve, AnimationProgress, ANIMATION_NORMALIZED_MAX,
                                          GPathInfo};
-use crate::pebble::internal::types::{GPathRaw, GContext};
+use crate::pebble::internal::types::{RawGPath, GContext};
 use crate::pebble::internal::functions::{interface, declarations};
 
 pub type VoidPtr = *const crate::pebble::internal::types::c_void;
 pub type DictPtr = *mut crate::pebble::internal::types::DictionaryIterator;
 
 #[derive(Clone)]
-pub struct Bitmap {
-    pub internal: *mut GBitmap
+pub struct GBitmap {
+    pub internal: *mut RawGBitmap
 }
 
-impl Bitmap {
-    pub fn new(resource_id: u32) -> Bitmap {
+impl GBitmap {
+    pub fn new(resource_id: u32) -> GBitmap {
         let internal = interface::gbitmap_create_with_resource(resource_id);
-        Bitmap {internal}
+        GBitmap {internal}
     }
 
     pub fn clean(self) {
@@ -45,7 +45,7 @@ impl Bitmap {
     }
 }
 
-pub struct GPath(*mut GPathRaw);
+pub struct GPath(*mut RawGPath);
 
 impl GPath {
     pub fn new(info: &GPathInfo) -> Self {

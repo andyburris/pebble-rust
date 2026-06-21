@@ -7,7 +7,7 @@ extern crate pebble_rust as pebble;
 
 use pebble::{app, window, WindowPtr};
 use pebble::app_message::{AppMessage, AppMessageDict};
-use pebble::layer::{ILayer, TextLayer};
+use pebble::layer::{AsLayer, TextLayer};
 use pebble::types::{DictPtr, GPoint, GRect, GSize, VoidPtr};
 use pebble::window::WindowHandlers;
 use crate::pebble::std::ToCString;

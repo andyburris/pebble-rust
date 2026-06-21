@@ -27,12 +27,14 @@
 #![allow(non_camel_case_types)]
 
 use crate::pebble::internal::functions::{interface::{graphics_context_set_compositing_mode, graphics_context_set_fill_color, graphics_context_set_stroke_color, graphics_context_set_stroke_width, graphics_context_set_text_color, graphics_draw_bitmap_in_rect, graphics_draw_line, graphics_draw_text, graphics_fill_circle, graphics_fill_rect, graphics_text_layout_get_content_size}};
+use crate::pebble::system::fonts::GFont;
+use crate::pebble::types::GBitmap;
 
-pub enum Window {}
+pub enum RawWindow {}
 pub enum Layer {}
 pub enum TextLayer {}
 pub enum ClickRecognizer {}
-pub enum GBitmap {}
+pub enum RawGBitmap {}
 pub enum GContext {}
 
 impl GContext {
@@ -58,21 +60,22 @@ impl GContext {
     pub fn set_compositing_mode(&mut self, mode: GCompOp) {
         graphics_context_set_compositing_mode(self, mode);
     }
-    pub fn draw_bitmap_in_rect(&mut self, bitmap: *const GBitmap, dest_rect: GRect) {
-        graphics_draw_bitmap_in_rect(self, bitmap, dest_rect);
+    pub fn draw_bitmap_in_rect(&mut self, bitmap: &GBitmap, dest_rect: GRect) {
+        graphics_draw_bitmap_in_rect(self, bitmap.internal, dest_rect);
     }
     pub fn draw_line(&mut self, p0: GPoint, p1: GPoint) {
         graphics_draw_line(self, p0, p1);
     }
-    pub fn draw_text(&mut self, text: &core::ffi::CStr, font: GFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) {
-        graphics_draw_text(self, text, font, rect, overflow, alignment);
+    pub fn draw_text(&mut self, text: &core::ffi::CStr, font: &GFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) {
+        graphics_draw_text(self, text, font.internal, rect, overflow, alignment);
     }
-    pub fn measure_text(&self, text: &core::ffi::CStr, font: GFont, max_size: GSize) -> GSize {
+    pub fn measure_text(&self, text: &core::ffi::CStr, font: &GFont, bounds_size: GSize, options: Option<(GTextOverflowMode, GTextAlignment)>) -> GSize {
+        let (overflow, alignment) = options.unwrap_or((GTextOverflowMode::TrailingEllipsis, GTextAlignment::Left));
         graphics_text_layout_get_content_size(
-            text, font,
-            GRect { origin: GPoint::ORIGIN, size: max_size },
-            GTextOverflowMode::TrailingEllipsis,
-            GTextAlignment::Left,
+            text, font.internal,
+            GRect { origin: GPoint::ORIGIN, size: bounds_size },
+            overflow,
+            alignment,
         )
     }
 }
@@ -84,7 +87,7 @@ pub struct GPathInfo {
 }
 
 #[repr(C)]
-pub struct GPathRaw {
+pub struct RawGPath {
     pub num_points: u32,
     pub points: *const GPoint,
     pub rotation: i32,
@@ -135,10 +138,10 @@ pub struct GRect {
 
 #[repr(C)]
 pub struct WindowHandlers {
-    pub load: extern "C" fn(*mut Window),
-    pub appear: extern "C" fn(*mut Window),
-    pub disappear: extern "C" fn(*mut Window),
-    pub unload: extern "C" fn(*mut Window),
+    pub load: extern "C" fn(*mut RawWindow),
+    pub appear: extern "C" fn(*mut RawWindow),
+    pub disappear: extern "C" fn(*mut RawWindow),
+    pub unload: extern "C" fn(*mut RawWindow),
 }
 
 #[repr(C)]
@@ -177,6 +180,16 @@ pub enum GTextOverflowMode {
     WordWrap = 0,
     TrailingEllipsis = 1,
     Fill = 2,
+}
+
+/// Where a row is scrolled to when it becomes selected (no wrapper — value type).
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub enum MenuRowAlign {
+    None = 0,
+    Center = 1,
+    Top = 2,
+    Bottom = 3,
 }
 
 /// SDK 3.x GColor — 1-byte packed ARGB (aa rr gg bb, 2 bits each).
@@ -269,7 +282,7 @@ pub type ResHandle = c_void;
 #[repr(C)]
 pub struct FontInfo;
 
-pub type GFont = *mut FontInfo;
+pub type RawGFont = *mut FontInfo;
 
 #[allow(non_camel_case_types)]
 #[repr(u8)]
@@ -400,7 +413,7 @@ pub struct ConnectionHandlers {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MenuIndex {
     pub section: u16,
     pub row: u16,

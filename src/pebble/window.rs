@@ -22,7 +22,7 @@ use crate::pebble::WindowPtr;
 use crate::pebble::layer::Layer;
 
 pub struct Window {
-    internal: *mut types::Window
+    internal: *mut types::RawWindow
 }
 
 #[derive(Copy, Clone)]

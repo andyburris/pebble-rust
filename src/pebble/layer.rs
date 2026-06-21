@@ -18,11 +18,12 @@
 
 use alloc::boxed::Box;
 use core::ffi::CStr;
+use core::marker::PhantomData;
 use crate::pebble::internal::functions::interface::text_layer_set_background_color;
 use crate::pebble::internal::{functions::interface, types};
-use crate::pebble::internal::types::{MenuLayer as RawMenuLayer, MenuLayerCallbacks, MenuIndex};
-use crate::pebble::types::{Bitmap, GCompOp, GRect};
-use crate::system::fonts::Font;
+use crate::pebble::internal::types::{MenuLayer as RawMenuLayer, MenuLayerCallbacks, MenuIndex, MenuRowAlign};
+use crate::pebble::types::{GBitmap, GCompOp, GRect};
+use crate::system::fonts::GFont;
 use crate::pebble::window::Window;
 use crate::types::GColor;
 
@@ -40,27 +41,27 @@ pub struct BitmapLayer {
     inner: *mut types::Layer
 }
 
-pub trait ILayer {
-    fn get_internal(&self) -> *mut types::Layer;
+pub trait AsLayer {
+    fn as_raw(&self) -> *mut types::Layer;
     fn get_bounds(&self) -> GRect {
-        interface::layer_get_bounds(self.get_internal())
+        interface::layer_get_bounds(self.as_raw())
     }
     fn get_frame(&self) -> GRect {
-        interface::layer_get_frame(self.get_internal())
+        interface::layer_get_frame(self.as_raw())
     }
-    fn add_child(&self, layer: &dyn ILayer) {
-        interface::layer_add_child(self.get_internal(), layer.get_internal())
+    fn add_child(&self, layer: &dyn AsLayer) {
+        interface::layer_add_child(self.as_raw(), layer.as_raw())
     }
     fn mark_dirty(&self) {
-        interface::layer_mark_dirty(self.get_internal());
+        interface::layer_mark_dirty(self.as_raw());
     }
     fn set_hidden(&self, hidden: bool) {
-        interface::layer_set_hidden(self.get_internal(), hidden);
+        interface::layer_set_hidden(self.as_raw(), hidden);
     }
 }
 
-impl ILayer for Layer {
-    fn get_internal(&self) -> *mut types::Layer {
+impl AsLayer for Layer {
+    fn as_raw(&self) -> *mut types::Layer {
         self.internal
     }
 }
@@ -83,8 +84,8 @@ impl Layer {
     }
 }
 
-impl ILayer for TextLayer {
-    fn get_internal(&self) -> *mut types::Layer {
+impl AsLayer for TextLayer {
+    fn as_raw(&self) -> *mut types::Layer {
         self.inner
     }
 }
@@ -104,7 +105,7 @@ impl TextLayer {
         interface::text_layer_set_text(self.internal, text);
     }
 
-    pub fn set_font(&self, font: Font) {
+    pub fn set_font(&self, font: GFont) {
         interface::text_layer_set_font(self.internal, font.internal)
     }
 
@@ -121,8 +122,8 @@ impl TextLayer {
     }
 }
 
-impl ILayer for BitmapLayer {
-    fn get_internal(&self) -> *mut types::Layer {
+impl AsLayer for BitmapLayer {
+    fn as_raw(&self) -> *mut types::Layer {
         self.inner
     }
 }
@@ -137,7 +138,7 @@ impl BitmapLayer {
         }
     }
 
-    pub fn set_bitmap(&self, bitmap: &Bitmap) {
+    pub fn set_bitmap(&self, bitmap: &GBitmap) {
         interface::bitmap_layer_set_bitmap(self.internal, bitmap.internal);
     }
 
@@ -152,14 +153,14 @@ pub struct MenuLayer<T> {
     _ctx:     Box<MenuLayerContext<T>>,
 }
 
-impl<T> ILayer for MenuLayer<T> {
-    fn get_internal(&self) -> *mut types::Layer { self.inner }
+impl<T> AsLayer for MenuLayer<T> {
+    fn as_raw(&self) -> *mut types::Layer { self.inner }
 }
 
 impl<T> MenuLayer<T> {
     pub fn new(frame: GRect, context: *mut T, callbacks: TypedMenuCallbacks<T>) -> Self {
         let internal = interface::menu_layer_create(frame);
-        let mut ctx = Box::new(MenuLayerContext { context, callbacks });
+        let mut ctx = Box::new(MenuLayerContext { menu: internal, context, callbacks });
         let ctx_ptr: *mut MenuLayerContext<T> = &mut *ctx;
         let raw_cbs = MenuLayerCallbacks {
             get_num_sections:      ctx.callbacks.get_num_sections      .map(|_| trampoline_num_sections::<T>      as extern "C" fn(*mut u8, *mut ()) -> u16),
@@ -197,6 +198,34 @@ impl<T> MenuLayer<T> {
     pub fn reload_data(&self) {
         interface::menu_layer_reload_data(self.internal);
     }
+
+    pub fn get_selected_index(&self) -> MenuIndex {
+        interface::menu_layer_get_selected_index(self.internal)
+    }
+
+    pub fn is_index_selected(&self, index: &MenuIndex) -> bool {
+        interface::menu_layer_is_index_selected(self.internal, index)
+    }
+
+    pub fn get_center_focused(&self) -> bool {
+        interface::menu_layer_get_center_focused(self.internal)
+    }
+
+    pub fn set_center_focused(&self, center_focused: bool) {
+        interface::menu_layer_set_center_focused(self.internal, center_focused);
+    }
+
+    pub fn set_selected_index(&self, index: MenuIndex, scroll_align: MenuRowAlign, animated: bool) {
+        interface::menu_layer_set_selected_index(self.internal, index, scroll_align, animated);
+    }
+
+    pub fn set_selected_next(&self, up: bool, scroll_align: MenuRowAlign, animated: bool) {
+        interface::menu_layer_set_selected_next(self.internal, up, scroll_align, animated);
+    }
+
+    pub fn pad_bottom_enable(&self, enable: bool) {
+        interface::menu_layer_pad_bottom_enable(self.internal, enable);
+    }
 }
 
 // ── DrawLayer ─────────────────────────────────────────────────────────────────
@@ -212,8 +241,8 @@ pub struct DrawLayer<T> {
     _ctx: Box<DrawLayerContext<T>>,
 }
 
-impl<T> ILayer for DrawLayer<T> {
-    fn get_internal(&self) -> *mut types::Layer { self.internal }
+impl<T> AsLayer for DrawLayer<T> {
+    fn as_raw(&self) -> *mut types::Layer { self.internal }
 }
 
 impl<T> DrawLayer<T> {
@@ -238,19 +267,19 @@ extern "C" fn draw_trampoline<T>(layer: *mut types::Layer, ctx: *mut types::GCon
 pub const MENU_CELL_BASIC_HEADER_HEIGHT: i16 = 16;
 
 pub struct TypedMenuCallbacks<T> {
-    pub get_num_sections:      Option<fn(&T) -> u16>,
-    pub get_num_rows:          Option<fn(&T, u16) -> u16>,
-    pub get_cell_height:       Option<fn(&T, &MenuIndex) -> i16>,
-    pub get_header_height:     Option<fn(&T, u16) -> i16>,
-    pub draw_row:              Option<fn(*mut types::GContext, *const types::Layer, &MenuIndex, &T)>,
-    pub draw_header:           Option<fn(*mut types::GContext, *const types::Layer, u16, &T)>,
-    pub select_click:          Option<fn(&T, &MenuIndex)>,
-    pub select_long_click:     Option<fn(&T, &MenuIndex)>,
-    pub selection_changed:     Option<fn(&T, MenuIndex, MenuIndex)>,
-    pub get_separator_height:  Option<fn(&T, &MenuIndex) -> i16>,
-    pub draw_separator:        Option<fn(*mut types::GContext, *const types::Layer, &MenuIndex, &T)>,
-    pub selection_will_change: Option<fn(&T, &mut MenuIndex, MenuIndex)>,
-    pub draw_background:       Option<fn(*mut types::GContext, *const types::Layer, bool, &T)>,
+    pub get_num_sections:      Option<fn(MenuLayerRef, &T) -> u16>,
+    pub get_num_rows:          Option<fn(MenuLayerRef, &T, u16) -> u16>,
+    pub get_cell_height:       Option<fn(MenuLayerRef, &T, &MenuIndex) -> i16>,
+    pub get_header_height:     Option<fn(MenuLayerRef, &T, u16) -> i16>,
+    pub draw_row:              Option<fn(MenuLayerRef, &mut types::GContext, &MenuCellLayer, &MenuIndex, &T)>,
+    pub draw_header:           Option<fn(MenuLayerRef, &mut types::GContext, &MenuCellLayer, u16, &T)>,
+    pub select_click:          Option<fn(MenuLayerRef, &T, &MenuIndex)>,
+    pub select_long_click:     Option<fn(MenuLayerRef, &T, &MenuIndex)>,
+    pub selection_changed:     Option<fn(MenuLayerRef, &T, MenuIndex, MenuIndex)>,
+    pub get_separator_height:  Option<fn(MenuLayerRef, &T, &MenuIndex) -> i16>,
+    pub draw_separator:        Option<fn(MenuLayerRef, &mut types::GContext, &MenuCellLayer, &MenuIndex, &T)>,
+    pub selection_will_change: Option<fn(MenuLayerRef, &T, &mut MenuIndex, MenuIndex)>,
+    pub draw_background:       Option<fn(MenuLayerRef, &mut types::GContext, &MenuCellLayer, bool, &T)>,
 }
 
 impl<T> Default for TypedMenuCallbacks<T> {
@@ -274,67 +303,128 @@ impl<T> Default for TypedMenuCallbacks<T> {
 }
 
 struct MenuLayerContext<T> {
+    menu:      *mut RawMenuLayer,
     context:   *mut T,
     callbacks: TypedMenuCallbacks<T>,
 }
 
 extern "C" fn trampoline_num_sections<T>(_: *mut u8, ctx: *mut ()) -> u16 {
     let c = unsafe { &*(ctx as *const MenuLayerContext<T>) };
-    if let Some(f) = c.callbacks.get_num_sections { f(unsafe { &*c.context }) } else { 1 }
+    if let Some(f) = c.callbacks.get_num_sections { f(MenuLayerRef::from_raw(c.menu), unsafe { &*c.context }) } else { 1 }
 }
 extern "C" fn trampoline_num_rows<T>(_: *mut u8, section: u16, ctx: *mut ()) -> u16 {
     let c = unsafe { &*(ctx as *const MenuLayerContext<T>) };
-    if let Some(f) = c.callbacks.get_num_rows { f(unsafe { &*c.context }, section) } else { 0 }
+    if let Some(f) = c.callbacks.get_num_rows { f(MenuLayerRef::from_raw(c.menu), unsafe { &*c.context }, section) } else { 0 }
 }
 extern "C" fn trampoline_cell_height<T>(_: *mut u8, index: *const MenuIndex, ctx: *mut ()) -> i16 {
     let c = unsafe { &*(ctx as *const MenuLayerContext<T>) };
-    if let Some(f) = c.callbacks.get_cell_height { f(unsafe { &*c.context }, unsafe { &*index }) } else { 0 }
+    if let Some(f) = c.callbacks.get_cell_height { f(MenuLayerRef::from_raw(c.menu), unsafe { &*c.context }, unsafe { &*index }) } else { 0 }
 }
 extern "C" fn trampoline_header_height<T>(_: *mut u8, section: u16, ctx: *mut ()) -> i16 {
     let c = unsafe { &*(ctx as *const MenuLayerContext<T>) };
-    if let Some(f) = c.callbacks.get_header_height { f(unsafe { &*c.context }, section) } else { 0 }
+    if let Some(f) = c.callbacks.get_header_height { f(MenuLayerRef::from_raw(c.menu), unsafe { &*c.context }, section) } else { 0 }
 }
 extern "C" fn trampoline_draw_row<T>(gctx: *mut types::GContext, cell: *const types::Layer, index: *const MenuIndex, ctx: *mut ()) {
     let c = unsafe { &*(ctx as *const MenuLayerContext<T>) };
-    if let Some(f) = c.callbacks.draw_row { f(gctx, cell, unsafe { &*index }, unsafe { &*c.context }) }
+    if let Some(f) = c.callbacks.draw_row { f(MenuLayerRef::from_raw(c.menu), unsafe { &mut *gctx }, &MenuCellLayer::from_raw(cell), unsafe { &*index }, unsafe { &*c.context }) }
 }
 extern "C" fn trampoline_draw_header<T>(gctx: *mut types::GContext, cell: *const types::Layer, section: u16, ctx: *mut ()) {
     let c = unsafe { &*(ctx as *const MenuLayerContext<T>) };
-    if let Some(f) = c.callbacks.draw_header { f(gctx, cell, section, unsafe { &*c.context }) }
+    if let Some(f) = c.callbacks.draw_header { f(MenuLayerRef::from_raw(c.menu), unsafe { &mut *gctx }, &MenuCellLayer::from_raw(cell), section, unsafe { &*c.context }) }
 }
 extern "C" fn trampoline_select_click<T>(_: *mut u8, index: *const MenuIndex, ctx: *mut ()) {
     let c = unsafe { &*(ctx as *const MenuLayerContext<T>) };
-    if let Some(f) = c.callbacks.select_click { f(unsafe { &*c.context }, unsafe { &*index }) }
+    if let Some(f) = c.callbacks.select_click { f(MenuLayerRef::from_raw(c.menu), unsafe { &*c.context }, unsafe { &*index }) }
 }
 extern "C" fn trampoline_select_long_click<T>(_: *mut u8, index: *const MenuIndex, ctx: *mut ()) {
     let c = unsafe { &*(ctx as *const MenuLayerContext<T>) };
-    if let Some(f) = c.callbacks.select_long_click { f(unsafe { &*c.context }, unsafe { &*index }) }
+    if let Some(f) = c.callbacks.select_long_click { f(MenuLayerRef::from_raw(c.menu), unsafe { &*c.context }, unsafe { &*index }) }
 }
 extern "C" fn trampoline_selection_changed<T>(_: *mut u8, new_index: MenuIndex, old_index: MenuIndex, ctx: *mut ()) {
     let c = unsafe { &*(ctx as *const MenuLayerContext<T>) };
-    if let Some(f) = c.callbacks.selection_changed { f(unsafe { &*c.context }, new_index, old_index) }
+    if let Some(f) = c.callbacks.selection_changed { f(MenuLayerRef::from_raw(c.menu), unsafe { &*c.context }, new_index, old_index) }
 }
 extern "C" fn trampoline_separator_height<T>(_: *mut u8, index: *const MenuIndex, ctx: *mut ()) -> i16 {
     let c = unsafe { &*(ctx as *const MenuLayerContext<T>) };
-    if let Some(f) = c.callbacks.get_separator_height { f(unsafe { &*c.context }, unsafe { &*index }) } else { 0 }
+    if let Some(f) = c.callbacks.get_separator_height { f(MenuLayerRef::from_raw(c.menu), unsafe { &*c.context }, unsafe { &*index }) } else { 0 }
 }
 extern "C" fn trampoline_draw_separator<T>(gctx: *mut types::GContext, cell: *const types::Layer, index: *const MenuIndex, ctx: *mut ()) {
     let c = unsafe { &*(ctx as *const MenuLayerContext<T>) };
-    if let Some(f) = c.callbacks.draw_separator { f(gctx, cell, unsafe { &*index }, unsafe { &*c.context }) }
+    if let Some(f) = c.callbacks.draw_separator { f(MenuLayerRef::from_raw(c.menu), unsafe { &mut *gctx }, &MenuCellLayer::from_raw(cell), unsafe { &*index }, unsafe { &*c.context }) }
 }
 extern "C" fn trampoline_selection_will_change<T>(_: *mut u8, new_index: *mut MenuIndex, old_index: MenuIndex, ctx: *mut ()) {
     let c = unsafe { &*(ctx as *const MenuLayerContext<T>) };
-    if let Some(f) = c.callbacks.selection_will_change { f(unsafe { &*c.context }, unsafe { &mut *new_index }, old_index) }
+    if let Some(f) = c.callbacks.selection_will_change { f(MenuLayerRef::from_raw(c.menu), unsafe { &*c.context }, unsafe { &mut *new_index }, old_index) }
 }
 extern "C" fn trampoline_draw_background<T>(gctx: *mut types::GContext, cell: *const types::Layer, highlighted: bool, ctx: *mut ()) {
     let c = unsafe { &*(ctx as *const MenuLayerContext<T>) };
-    if let Some(f) = c.callbacks.draw_background { f(gctx, cell, highlighted, unsafe { &*c.context }) }
+    if let Some(f) = c.callbacks.draw_background { f(MenuLayerRef::from_raw(c.menu), unsafe { &mut *gctx }, &MenuCellLayer::from_raw(cell), highlighted, unsafe { &*c.context }) }
 }
 
-pub fn menu_cell_basic_draw(ctx: *mut types::GContext, cell: *const types::Layer, title: Option<&CStr>, subtitle: Option<&CStr>, icon: Option<*mut types::GBitmap>) {
-    interface::menu_cell_basic_draw(ctx, cell, title, subtitle, icon);
+/// A menu cell, handed to the draw callbacks. Wraps the cell layer for the
+/// duration of the callback; draw into it with these methods instead of touching
+/// the raw `*const Layer` / `*mut GContext`.
+pub struct MenuCellLayer<'a> {
+    raw:   *const types::Layer,
+    _life: PhantomData<&'a ()>,
 }
 
-pub fn menu_cell_basic_header_draw(ctx: *mut types::GContext, cell: *const types::Layer, title: &CStr) {
-    interface::menu_cell_basic_header_draw(ctx, cell, title);
+impl<'a> MenuCellLayer<'a> {
+    fn from_raw(raw: *const types::Layer) -> Self {
+        MenuCellLayer { raw, _life: PhantomData }
+    }
+
+    pub fn draw_basic(&self, ctx: &mut types::GContext, title: Option<&CStr>, subtitle: Option<&CStr>, icon: Option<&GBitmap>) {
+        interface::menu_cell_basic_draw(ctx, self.raw, title, subtitle, icon.map(|b| b.internal));
+    }
+
+    pub fn draw_header(&self, ctx: &mut types::GContext, title: &CStr) {
+        interface::menu_cell_basic_header_draw(ctx, self.raw, title);
+    }
+
+    pub fn draw_title(&self, ctx: &mut types::GContext, title: &CStr) {
+        interface::menu_cell_title_draw(ctx, self.raw, title);
+    }
+
+    /// Whether this cell is the currently-selected (highlighted) one.
+    pub fn is_highlighted(&self) -> bool {
+        interface::menu_cell_layer_is_highlighted(self.raw)
+    }
+}
+
+/// A borrowed view of the parent `MenuLayer`, handed to every menu callback as
+/// its first argument. Read-only and valid only for the callback (don't store
+/// it); the owned `MenuLayer<T>` carries the mutators. Lets a callback ask the
+/// menu about its own state — e.g. `menu.get_selected_index()`.
+#[derive(Copy, Clone)]
+pub struct MenuLayerRef<'a> {
+    raw:   *mut RawMenuLayer,
+    _life: PhantomData<&'a ()>,
+}
+
+impl<'a> MenuLayerRef<'a> {
+    fn from_raw(raw: *mut RawMenuLayer) -> Self {
+        MenuLayerRef { raw, _life: PhantomData }
+    }
+
+    pub fn get_selected_index(&self) -> MenuIndex {
+        interface::menu_layer_get_selected_index(self.raw)
+    }
+
+    pub fn is_index_selected(&self, index: &MenuIndex) -> bool {
+        interface::menu_layer_is_index_selected(self.raw, index)
+    }
+
+    pub fn get_center_focused(&self) -> bool {
+        interface::menu_layer_get_center_focused(self.raw)
+    }
+}
+
+impl AsLayer for MenuCellLayer<'_> {
+    fn as_raw(&self) -> *mut types::Layer {
+        // The cell is handed to us as *const (the SDK owns it, transient for one
+        // paint); cast for the AsLayer contract. Only sound for the read-only
+        // methods (get_bounds/get_frame) — don't mutate a cell.
+        self.raw as *mut types::Layer
+    }
 }

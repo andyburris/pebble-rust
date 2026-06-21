@@ -7,7 +7,7 @@ extern crate pebble_rust as pebble;
 
 use pebble::{app, window, WindowPtr};
 use pebble::window::WindowHandlers;
-use pebble::layer::{ILayer, TextLayer};
+use pebble::layer::{AsLayer, TextLayer};
 use pebble::types::{GRect, GPoint, GSize};
 
 #[unsafe(no_mangle)]
@@ -49,7 +49,7 @@ extern "C" fn load_handler(window: WindowPtr) {
 
     let text = TextLayer::new(bounds);
     text.set_text(c"Hello from Rust!");
-    text.set_font(pebble::system::fonts::Font::get_system(pebble::system::fonts::FontKey::GOTHIC_24));
+    text.set_font(pebble::system::fonts::GFont::get_system(pebble::system::fonts::FontKey::GOTHIC_24));
     root.add_child(&text);
 }
 

@@ -1,6 +1,6 @@
 use core::ffi::CStr;
 
-use crate::pebble::internal::types::{GFont, ResHandle};
+use crate::pebble::internal::types::{RawGFont, ResHandle};
 use crate::pebble::internal::functions::declarations::*;
 
 #[derive(Copy, Clone)]
@@ -37,13 +37,13 @@ impl FontKey {
     pub const LECO_42_BOLD_NUMBERS: FontKey = FontKey { resource_id: c"RESOURCE_ID_LECO_42_NUMBERS", total_margin: 13, canonical_height: 42 };
 }
 
-pub struct Font {
-    pub internal: GFont,
+pub struct GFont {
+    pub internal: RawGFont,
     pub top_offset: u16,
     pub total_margin: u16,
 }
 
-impl Font {
+impl GFont {
     pub fn get_system(key: FontKey) -> Self {
         unsafe {
             let internal = fonts_get_system_font(key.resource_id.as_ptr() as *const u8);

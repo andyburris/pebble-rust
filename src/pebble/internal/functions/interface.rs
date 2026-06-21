@@ -38,25 +38,25 @@ pub fn app_event_loop() {
     }
 }
 
-pub fn window_create() -> *mut Window {
+pub fn window_create() -> *mut RawWindow {
     unsafe {
         declarations::window_create()
     }
 }
 
-pub fn window_destroy(window: *mut Window) {
+pub fn window_destroy(window: *mut RawWindow) {
     unsafe {
         declarations::window_destroy(window);
     }
 }
 
-pub fn window_set_click_config_provider<T>(window: *mut Window, func: extern "C" fn(*mut T)) {
+pub fn window_set_click_config_provider<T>(window: *mut RawWindow, func: extern "C" fn(*mut T)) {
     unsafe {
         declarations::window_set_click_config_provider(window, mem::transmute(func));
     }
 }
 
-pub fn window_set_click_config_provider_with_context<T>(window: *mut Window, func: extern "C" fn(*mut T), ctx: *mut T) {
+pub fn window_set_click_config_provider_with_context<T>(window: *mut RawWindow, func: extern "C" fn(*mut T), ctx: *mut T) {
     unsafe {
         declarations::window_set_click_config_provider_with_context(window,
                                                                 mem::transmute(func),
@@ -64,31 +64,31 @@ pub fn window_set_click_config_provider_with_context<T>(window: *mut Window, fun
     }
 }
 
-pub fn window_set_window_handlers(window: *mut Window, handlers: WindowHandlers) {
+pub fn window_set_window_handlers(window: *mut RawWindow, handlers: WindowHandlers) {
     unsafe {
         declarations::window_set_window_handlers(window, handlers);
     }
 }
 
-pub fn window_set_background_color(window: *mut Window, color: GColor) {
+pub fn window_set_background_color(window: *mut RawWindow, color: GColor) {
     unsafe {
         declarations::window_set_background_color(window, color);
     }
 }
 
-pub fn window_set_user_data<T>(window: *mut Window, data: *mut T) {
+pub fn window_set_user_data<T>(window: *mut RawWindow, data: *mut T) {
     unsafe {
         declarations::window_set_user_data(window, data as *mut c_void);
     }
 }
 
-pub fn window_get_user_data<T>(window: *mut Window) -> *mut T {
+pub fn window_get_user_data<T>(window: *mut RawWindow) -> *mut T {
     unsafe {
         declarations::window_get_user_data(window) as *mut T
     }
 }
 
-pub fn window_stack_push(window: *mut Window, animate: bool) {
+pub fn window_stack_push(window: *mut RawWindow, animate: bool) {
     unsafe {
         if animate {
             declarations::window_stack_push(window, 1);
@@ -98,7 +98,7 @@ pub fn window_stack_push(window: *mut Window, animate: bool) {
     }
 }
 
-pub fn window_get_root_layer(window: *mut Window) -> *mut Layer {
+pub fn window_get_root_layer(window: *mut RawWindow) -> *mut Layer {
     unsafe {
         declarations::window_get_root_layer(window)
     }
@@ -188,7 +188,7 @@ pub fn text_layer_set_text(layer: *mut TextLayer, text: &CStr) {
     }
 }
 
-pub fn text_layer_set_font(layer: *mut TextLayer, font: GFont) {
+pub fn text_layer_set_font(layer: *mut TextLayer, font: RawGFont) {
     unsafe {
         declarations::text_layer_set_font(layer, font);
     }
@@ -212,7 +212,7 @@ pub fn text_layer_set_text_alignment(layer: *mut TextLayer, alignment: GTextAlig
     unsafe { declarations::text_layer_set_text_alignment(layer, alignment); }
 }
 
-pub fn gbitmap_create_with_resource(id: u32) -> *mut GBitmap {
+pub fn gbitmap_create_with_resource(id: u32) -> *mut RawGBitmap {
     unsafe {
         declarations::gbitmap_create_with_resource(id)
     }
@@ -224,7 +224,7 @@ pub fn bitmap_layer_create(frame: GRect) -> *mut BitmapLayer {
     }
 }
 
-pub fn bitmap_layer_set_bitmap(layer: *mut BitmapLayer, bitmap: *mut GBitmap) {
+pub fn bitmap_layer_set_bitmap(layer: *mut BitmapLayer, bitmap: *mut RawGBitmap) {
     unsafe {
         declarations::bitmap_layer_set_bitmap(layer, bitmap);
     }
@@ -272,7 +272,7 @@ pub fn graphics_context_set_compositing_mode(ctx: *mut GContext, mode: GCompOp) 
     }
 }
 
-pub fn graphics_draw_bitmap_in_rect(ctx: *mut GContext, bitmap: *const GBitmap, dest_rect: GRect) {
+pub fn graphics_draw_bitmap_in_rect(ctx: *mut GContext, bitmap: *const RawGBitmap, dest_rect: GRect) {
     unsafe {
         declarations::graphics_draw_bitmap_in_rect(ctx, bitmap, dest_rect);
     }
@@ -297,43 +297,43 @@ pub fn graphics_draw_line(ctx: *mut GContext, p0: GPoint, p1: GPoint) {
     }
 }
 
-pub fn graphics_draw_text(ctx: *mut GContext, text: &CStr, font: GFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) {
+pub fn graphics_draw_text(ctx: *mut GContext, text: &CStr, font: RawGFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) {
     unsafe {
         declarations::graphics_draw_text(ctx, text.as_ptr() as *const u8, font, rect, overflow, alignment, core::ptr::null_mut());
     }
 }
 
-pub fn graphics_text_layout_get_content_size(text: &CStr, font: GFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) -> GSize {
+pub fn graphics_text_layout_get_content_size(text: &CStr, font: RawGFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) -> GSize {
     unsafe {
         declarations::graphics_text_layout_get_content_size(text.as_ptr() as *const u8, font, rect, overflow, alignment)
     }
 }
 
-pub fn gpath_create(init: *const GPathInfo) -> *mut GPathRaw {
+pub fn gpath_create(init: *const GPathInfo) -> *mut RawGPath {
     unsafe { declarations::gpath_create(init) }
 }
 
-pub fn gpath_destroy(path: *mut GPathRaw) {
+pub fn gpath_destroy(path: *mut RawGPath) {
     unsafe { declarations::gpath_destroy(path); }
 }
 
-pub fn gpath_draw_filled(ctx: *mut GContext, path: *const GPathRaw) {
+pub fn gpath_draw_filled(ctx: *mut GContext, path: *const RawGPath) {
     unsafe { declarations::gpath_draw_filled(ctx, path); }
 }
 
-pub fn gpath_draw_outline(ctx: *mut GContext, path: *const GPathRaw) {
+pub fn gpath_draw_outline(ctx: *mut GContext, path: *const RawGPath) {
     unsafe { declarations::gpath_draw_outline(ctx, path); }
 }
 
-pub fn gpath_draw_outline_open(ctx: *mut GContext, path: *const GPathRaw) {
+pub fn gpath_draw_outline_open(ctx: *mut GContext, path: *const RawGPath) {
     unsafe { declarations::gpath_draw_outline_open(ctx, path); }
 }
 
-pub fn gpath_move_to(path: *mut GPathRaw, point: GPoint) {
+pub fn gpath_move_to(path: *mut RawGPath, point: GPoint) {
     unsafe { declarations::gpath_move_to(path, point); }
 }
 
-pub fn gpath_rotate_to(path: *mut GPathRaw, angle: i32) {
+pub fn gpath_rotate_to(path: *mut RawGPath, angle: i32) {
     unsafe { declarations::gpath_rotate_to(path, angle); }
 }
 
@@ -401,7 +401,7 @@ pub fn menu_layer_set_callbacks<T>(menu_layer: *mut MenuLayer, context: *mut T, 
     unsafe { declarations::menu_layer_set_callbacks(menu_layer, context as *mut c_void, callbacks); }
 }
 
-pub fn menu_layer_set_click_config_onto_window(menu_layer: *mut MenuLayer, window: *mut Window) {
+pub fn menu_layer_set_click_config_onto_window(menu_layer: *mut MenuLayer, window: *mut RawWindow) {
     unsafe { declarations::menu_layer_set_click_config_onto_window(menu_layer, window); }
 }
 
@@ -417,7 +417,35 @@ pub fn menu_layer_reload_data(menu_layer: *mut MenuLayer) {
     unsafe { declarations::menu_layer_reload_data(menu_layer); }
 }
 
-pub fn menu_cell_basic_draw(ctx: *mut GContext, cell: *const Layer, title: Option<&CStr>, subtitle: Option<&CStr>, icon: Option<*mut GBitmap>) {
+pub fn menu_layer_get_selected_index(menu_layer: *mut MenuLayer) -> MenuIndex {
+    unsafe { declarations::menu_layer_get_selected_index(menu_layer) }
+}
+
+pub fn menu_layer_is_index_selected(menu_layer: *mut MenuLayer, index: &MenuIndex) -> bool {
+    unsafe { declarations::menu_layer_is_index_selected(menu_layer, index) }
+}
+
+pub fn menu_layer_get_center_focused(menu_layer: *mut MenuLayer) -> bool {
+    unsafe { declarations::menu_layer_get_center_focused(menu_layer) }
+}
+
+pub fn menu_layer_set_center_focused(menu_layer: *mut MenuLayer, center_focused: bool) {
+    unsafe { declarations::menu_layer_set_center_focused(menu_layer, center_focused); }
+}
+
+pub fn menu_layer_set_selected_index(menu_layer: *mut MenuLayer, index: MenuIndex, scroll_align: MenuRowAlign, animated: bool) {
+    unsafe { declarations::menu_layer_set_selected_index(menu_layer, index, scroll_align, animated); }
+}
+
+pub fn menu_layer_set_selected_next(menu_layer: *mut MenuLayer, up: bool, scroll_align: MenuRowAlign, animated: bool) {
+    unsafe { declarations::menu_layer_set_selected_next(menu_layer, up, scroll_align, animated); }
+}
+
+pub fn menu_layer_pad_bottom_enable(menu_layer: *mut MenuLayer, enable: bool) {
+    unsafe { declarations::menu_layer_pad_bottom_enable(menu_layer, enable); }
+}
+
+pub fn menu_cell_basic_draw(ctx: *mut GContext, cell: *const Layer, title: Option<&CStr>, subtitle: Option<&CStr>, icon: Option<*mut RawGBitmap>) {
     unsafe {
         declarations::menu_cell_basic_draw(
             ctx, cell,
@@ -430,6 +458,14 @@ pub fn menu_cell_basic_draw(ctx: *mut GContext, cell: *const Layer, title: Optio
 
 pub fn menu_cell_basic_header_draw(ctx: *mut GContext, cell: *const Layer, title: &CStr) {
     unsafe { declarations::menu_cell_basic_header_draw(ctx, cell, title.as_ptr() as *const u8); }
+}
+
+pub fn menu_cell_title_draw(ctx: *mut GContext, cell: *const Layer, title: &CStr) {
+    unsafe { declarations::menu_cell_title_draw(ctx, cell, title.as_ptr() as *const u8); }
+}
+
+pub fn menu_cell_layer_is_highlighted(cell: *const Layer) -> bool {
+    unsafe { declarations::menu_cell_layer_is_highlighted(cell) }
 }
 
 pub fn animation_create() -> *mut Animation {

@@ -6,8 +6,8 @@ extern crate pebble_rust as pebble;
 
 use pebble::{app, window, WindowPtr};
 use pebble::window::WindowHandlers;
-use pebble::layer::{ILayer, BitmapLayer};
-use pebble::types::{GCompOp, Bitmap};
+use pebble::layer::{AsLayer, BitmapLayer};
+use pebble::types::{GCompOp, GBitmap};
 
 #[unsafe(no_mangle)]
 pub fn main() -> isize {
@@ -31,7 +31,7 @@ extern "C" fn load_handler(window: WindowPtr) {
     let root = window.get_root_layer();
     let bounds = root.get_bounds();
 
-    let bitmap = Bitmap::new(1);
+    let bitmap = GBitmap::new(1);
     let bitmap_layer = BitmapLayer::new(bounds);
     bitmap_layer.set_bitmap(&bitmap);
     bitmap_layer.set_compositing_mode(GCompOp::GCompOpSet);

@@ -30,16 +30,16 @@ unsafe extern "C" {
     pub unsafe fn app_event_loop();
 
     // Window
-    pub unsafe fn window_create() -> *mut Window;
-    pub unsafe fn window_destroy(window: *mut Window);
-    pub unsafe fn window_set_click_config_provider(window: *mut Window, func: extern "C" fn(*mut c_void));
-    pub unsafe fn window_set_click_config_provider_with_context(window: *mut Window, func: extern "C" fn(*mut u8), ctx: *mut u8);
-    pub unsafe fn window_set_window_handlers(window: *mut Window, handlers: WindowHandlers);
-    pub unsafe fn window_set_background_color(window: *mut Window, color: GColor);
-    pub unsafe fn window_set_user_data(window: *mut Window, data: *mut c_void);
-    pub unsafe fn window_get_user_data(window: *mut Window) -> *mut c_void;
-    pub unsafe fn window_stack_push(window: *mut Window, animate: u8);
-    pub unsafe fn window_get_root_layer(window: *mut Window) -> *mut Layer;
+    pub unsafe fn window_create() -> *mut RawWindow;
+    pub unsafe fn window_destroy(window: *mut RawWindow);
+    pub unsafe fn window_set_click_config_provider(window: *mut RawWindow, func: extern "C" fn(*mut c_void));
+    pub unsafe fn window_set_click_config_provider_with_context(window: *mut RawWindow, func: extern "C" fn(*mut u8), ctx: *mut u8);
+    pub unsafe fn window_set_window_handlers(window: *mut RawWindow, handlers: WindowHandlers);
+    pub unsafe fn window_set_background_color(window: *mut RawWindow, color: GColor);
+    pub unsafe fn window_set_user_data(window: *mut RawWindow, data: *mut c_void);
+    pub unsafe fn window_get_user_data(window: *mut RawWindow) -> *mut c_void;
+    pub unsafe fn window_stack_push(window: *mut RawWindow, animate: u8);
+    pub unsafe fn window_get_root_layer(window: *mut RawWindow) -> *mut Layer;
     pub unsafe fn window_single_click_subscribe(button: u8, func: extern "C" fn(*mut ClickRecognizer, *mut u8));
     pub unsafe fn window_long_click_subscribe(button: u8, delay_ms: u16, down_handler: Option<extern "C" fn(*mut ClickRecognizer, *mut u8)>, up_handler: Option<extern "C" fn(*mut ClickRecognizer, *mut u8)>);
 
@@ -59,18 +59,18 @@ unsafe extern "C" {
     pub unsafe fn text_layer_create(bounds: GRect) -> *mut TextLayer;
     pub unsafe fn text_layer_set_text(layer: *mut TextLayer, text: *const c_char);
     pub unsafe fn text_layer_get_layer(layer: *mut TextLayer) -> *mut Layer;
-    pub unsafe fn text_layer_set_font(layer: *mut TextLayer, font: GFont);
+    pub unsafe fn text_layer_set_font(layer: *mut TextLayer, font: RawGFont);
     pub unsafe fn text_layer_set_background_color(layer: *mut TextLayer, color: GColor);
     pub unsafe fn text_layer_set_text_color(layer: *mut TextLayer, color: GColor);
     pub unsafe fn text_layer_set_text_alignment(layer: *mut TextLayer, alignment: GTextAlignment);
 
-    // GBitmap
-    pub unsafe fn gbitmap_create_with_resource(id: u32) -> *mut GBitmap;
-    pub unsafe fn gbitmap_destroy(bitmap: *mut GBitmap);
+    // RawGBitmap
+    pub unsafe fn gbitmap_create_with_resource(id: u32) -> *mut RawGBitmap;
+    pub unsafe fn gbitmap_destroy(bitmap: *mut RawGBitmap);
 
     // BitmapLayer
     pub unsafe fn bitmap_layer_create(frame: GRect) -> *mut BitmapLayer;
-    pub unsafe fn bitmap_layer_set_bitmap(layer: *mut BitmapLayer, bitmap: *mut GBitmap);
+    pub unsafe fn bitmap_layer_set_bitmap(layer: *mut BitmapLayer, bitmap: *mut RawGBitmap);
     pub unsafe fn bitmap_layer_set_compositing_mode(layer: *mut BitmapLayer, mode: GCompOp);
     pub unsafe fn bitmap_layer_get_layer(layer: *mut BitmapLayer) -> *mut Layer;
 
@@ -80,21 +80,21 @@ unsafe extern "C" {
     pub unsafe fn graphics_context_set_stroke_color(ctx: *mut GContext, color: GColor);
     pub unsafe fn graphics_context_set_stroke_width(ctx: *mut GContext, stroke_width: u8);
     pub unsafe fn graphics_context_set_compositing_mode(ctx: *mut GContext, mode: GCompOp);
-    pub unsafe fn graphics_draw_bitmap_in_rect(ctx: *mut GContext, bitmap: *const GBitmap, dest_rect: GRect);
+    pub unsafe fn graphics_draw_bitmap_in_rect(ctx: *mut GContext, bitmap: *const RawGBitmap, dest_rect: GRect);
     pub unsafe fn graphics_fill_circle(ctx: *mut GContext, center: GPoint, radius: u16);
     pub unsafe fn graphics_fill_rect(ctx: *mut GContext, rect: GRect, corner_radius: u16, corner_mask: GCornerMask);
     pub unsafe fn graphics_draw_line(ctx: *mut GContext, p0: GPoint, p1: GPoint);
-    pub unsafe fn graphics_draw_text(ctx: *mut GContext, text: *const c_char, font: GFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment, text_attributes: *mut c_void);
-    pub unsafe fn graphics_text_layout_get_content_size(text: *const c_char, font: GFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) -> GSize;
+    pub unsafe fn graphics_draw_text(ctx: *mut GContext, text: *const c_char, font: RawGFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment, text_attributes: *mut c_void);
+    pub unsafe fn graphics_text_layout_get_content_size(text: *const c_char, font: RawGFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) -> GSize;
 
     // GPath
-    pub unsafe fn gpath_create(init: *const GPathInfo) -> *mut GPathRaw;
-    pub unsafe fn gpath_destroy(path: *mut GPathRaw);
-    pub unsafe fn gpath_draw_filled(ctx: *mut GContext, path: *const GPathRaw);
-    pub unsafe fn gpath_draw_outline(ctx: *mut GContext, path: *const GPathRaw);
-    pub unsafe fn gpath_draw_outline_open(ctx: *mut GContext, path: *const GPathRaw);
-    pub unsafe fn gpath_move_to(path: *mut GPathRaw, point: GPoint);
-    pub unsafe fn gpath_rotate_to(path: *mut GPathRaw, angle: i32);
+    pub unsafe fn gpath_create(init: *const GPathInfo) -> *mut RawGPath;
+    pub unsafe fn gpath_destroy(path: *mut RawGPath);
+    pub unsafe fn gpath_draw_filled(ctx: *mut GContext, path: *const RawGPath);
+    pub unsafe fn gpath_draw_outline(ctx: *mut GContext, path: *const RawGPath);
+    pub unsafe fn gpath_draw_outline_open(ctx: *mut GContext, path: *const RawGPath);
+    pub unsafe fn gpath_move_to(path: *mut RawGPath, point: GPoint);
+    pub unsafe fn gpath_rotate_to(path: *mut RawGPath, angle: i32);
 
     // Trig
     pub unsafe fn sin_lookup(angle: i32) -> i32;
@@ -133,8 +133,8 @@ unsafe extern "C" {
     pub unsafe fn snprintf(buf: *const c_char, max: usize, fmt: *const c_char, ...) -> usize;
 
     // Fonts
-    pub unsafe fn fonts_get_system_font(key: *const c_char) -> GFont;
-    pub unsafe fn fonts_load_custom_font(res: ResHandle) -> GFont;
+    pub unsafe fn fonts_get_system_font(key: *const c_char) -> RawGFont;
+    pub unsafe fn fonts_load_custom_font(res: ResHandle) -> RawGFont;
 
     // Resources
     pub unsafe fn resource_get_handle(id: u32) -> ResHandle;
@@ -183,12 +183,21 @@ unsafe extern "C" {
     pub unsafe fn menu_layer_destroy(menu_layer: *mut MenuLayer);
     pub unsafe fn menu_layer_get_layer(menu_layer: *mut MenuLayer) -> *mut Layer;
     pub unsafe fn menu_layer_set_callbacks(menu_layer: *mut MenuLayer, callback_context: *mut c_void, callbacks: MenuLayerCallbacks);
-    pub unsafe fn menu_layer_set_click_config_onto_window(menu_layer: *mut MenuLayer, window: *mut Window);
+    pub unsafe fn menu_layer_set_click_config_onto_window(menu_layer: *mut MenuLayer, window: *mut RawWindow);
     pub unsafe fn menu_layer_set_highlight_colors(menu_layer: *mut MenuLayer, background: GColor, foreground: GColor);
     pub unsafe fn menu_layer_set_normal_colors(menu_layer: *mut MenuLayer, background: GColor, foreground: GColor);
     pub unsafe fn menu_layer_reload_data(menu_layer: *mut MenuLayer);
-    pub unsafe fn menu_cell_basic_draw(ctx: *mut GContext, cell_layer: *const Layer, title: *const c_char, subtitle: *const c_char, icon: *mut GBitmap);
+    pub unsafe fn menu_layer_get_selected_index(menu_layer: *mut MenuLayer) -> MenuIndex;
+    pub unsafe fn menu_layer_is_index_selected(menu_layer: *mut MenuLayer, index: *const MenuIndex) -> bool;
+    pub unsafe fn menu_layer_get_center_focused(menu_layer: *mut MenuLayer) -> bool;
+    pub unsafe fn menu_layer_set_center_focused(menu_layer: *mut MenuLayer, center_focused: bool);
+    pub unsafe fn menu_layer_set_selected_index(menu_layer: *mut MenuLayer, index: MenuIndex, scroll_align: MenuRowAlign, animated: bool);
+    pub unsafe fn menu_layer_set_selected_next(menu_layer: *mut MenuLayer, up: bool, scroll_align: MenuRowAlign, animated: bool);
+    pub unsafe fn menu_layer_pad_bottom_enable(menu_layer: *mut MenuLayer, enable: bool);
+    pub unsafe fn menu_cell_basic_draw(ctx: *mut GContext, cell_layer: *const Layer, title: *const c_char, subtitle: *const c_char, icon: *mut RawGBitmap);
     pub unsafe fn menu_cell_basic_header_draw(ctx: *mut GContext, cell_layer: *const Layer, title: *const c_char);
+    pub unsafe fn menu_cell_title_draw(ctx: *mut GContext, cell_layer: *const Layer, title: *const c_char);
+    pub unsafe fn menu_cell_layer_is_highlighted(cell_layer: *const Layer) -> bool;
 
     // Animation
     pub unsafe fn animation_create() -> *mut Animation;
