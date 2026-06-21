@@ -97,6 +97,9 @@ pub struct RawGPath {
 pub enum BitmapLayer {}
 pub enum MenuLayer {}
 
+/// Seconds since the Unix epoch. Pebble's `time_t` (docs: "unsigned int").
+pub type time_t = u32;
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct tm {

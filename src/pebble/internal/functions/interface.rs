@@ -358,23 +358,35 @@ pub fn tick_timer_service_subscribe(unit: TimeUnits, func: extern "C" fn(*mut tm
     }
 }
 
-pub fn time() -> usize {
+pub fn time() -> time_t {
     unsafe {
         declarations::time(core::ptr::null_mut())
     }
 }
 
-pub fn localtime(now: usize) -> *mut tm {
+pub fn localtime(now: time_t) -> *mut tm {
     unsafe {
-        let now_ptr = &now as *const usize;
+        let now_ptr = &now as *const time_t;
         declarations::localtime(now_ptr)
     }
 }
 
-pub fn gmtime(now: usize) -> *mut tm {
+pub fn gmtime(now: time_t) -> *mut tm {
     unsafe {
-        let now_ptr = &now as *const usize;
+        let now_ptr = &now as *const time_t;
         declarations::gmtime(now_ptr)
+    }
+}
+
+pub fn mktime(t: &mut tm) -> time_t {
+    unsafe { declarations::mktime(t) }
+}
+
+/// Format `t` into `buf` via C `strftime`; returns the number of bytes written
+/// (excluding the terminating NUL). 0 if the result didn't fit.
+pub fn strftime(buf: &mut [u8], format: &CStr, t: &tm) -> usize {
+    unsafe {
+        declarations::strftime(buf.as_mut_ptr(), buf.len(), format.as_ptr() as *const u8, t)
     }
 }
 

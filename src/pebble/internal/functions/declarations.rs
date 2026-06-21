@@ -109,9 +109,11 @@ unsafe extern "C" {
     pub unsafe fn tick_timer_service_unsubscribe();
 
     // Standard C - Time
-    pub unsafe fn time(t: *mut usize) -> usize;
-    pub unsafe fn localtime(now: *const usize) -> *mut tm;
-    pub unsafe fn gmtime(now: *const usize) -> *mut tm;
+    pub unsafe fn time(t: *mut time_t) -> time_t;
+    pub unsafe fn localtime(now: *const time_t) -> *mut tm;
+    pub unsafe fn gmtime(now: *const time_t) -> *mut tm;
+    pub unsafe fn mktime(tb: *mut tm) -> time_t;
+    pub unsafe fn strftime(s: *mut c_char, maxsize: usize, format: *const c_char, tm_p: *const tm) -> usize;
 
     // Standard C - Locale
     pub unsafe fn setlocale(category: i32, locale: *const c_char) -> *const c_char;
