@@ -26,6 +26,7 @@
 
 #![allow(non_camel_case_types)]
 
+use crate::pebble::internal::functions::interface;
 use crate::pebble::internal::functions::{interface::{graphics_context_set_compositing_mode, graphics_context_set_fill_color, graphics_context_set_stroke_color, graphics_context_set_stroke_width, graphics_context_set_text_color, graphics_draw_bitmap_in_rect, graphics_draw_line, graphics_draw_text, graphics_fill_circle, graphics_fill_rect, graphics_text_layout_get_content_size}};
 use crate::pebble::system::fonts::GFont;
 use crate::pebble::types::GBitmap;
@@ -114,7 +115,7 @@ pub struct tm {
     pub tm_isdst: u32
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct GPoint {
     pub x: i16,
@@ -128,9 +129,14 @@ impl GPoint {
     pub const fn new(x: i16, y: i16) -> GPoint {
         GPoint { x, y }
     }
+
+    /// `gpoint_equal` — true if both points are equal.
+    pub fn equal(&self, other: &GPoint) -> bool {
+        interface::gpoint_equal(self, other)
+    }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct GSize {
     pub w: i16,
@@ -143,9 +149,14 @@ impl GSize {
     pub const fn new(w: i16, h: i16) -> GSize {
         GSize { w, h }
     }
+
+    /// `gsize_equal` — true if both sizes are equal.
+    pub fn equal(&self, other: &GSize) -> bool {
+        interface::gsize_equal(self, other)
+    }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct GRect {
     pub origin: GPoint,
@@ -160,129 +171,65 @@ impl GRect {
         GRect { origin: GPoint { x, y }, size: GSize { w, h } }
     }
 
-    /// True if the rectangle has no area (zero or negative width and/or height).
-    pub const fn is_empty(self) -> bool {
-        self.size.w <= 0 || self.size.h <= 0
+    /// `grect_equal` — true if both rectangles are equal.
+    pub fn equal(&self, other: &GRect) -> bool {
+        interface::grect_equal(self, other)
     }
 
-    /// Returns an equivalent rectangle whose size components are both positive,
-    /// adjusting the origin to compensate for any negative dimension.
-    pub const fn standardize(self) -> GRect {
-        let GRect { mut origin, mut size } = self;
-        if size.w < 0 {
-            origin.x += size.w;
-            size.w = -size.w;
-        }
-        if size.h < 0 {
-            origin.y += size.h;
-            size.h = -size.h;
-        }
-        GRect { origin, size }
+    /// `grect_is_empty` — true if the size is (0, 0) (or a dimension is negative).
+    pub fn is_empty(&self) -> bool {
+        interface::grect_is_empty(self)
     }
 
-    /// Center point of the rectangle.
-    pub const fn center_point(self) -> GPoint {
-        GPoint {
-            x: self.origin.x + self.size.w / 2,
-            y: self.origin.y + self.size.h / 2,
-        }
+    /// `grect_standardize` — returns an equivalent rectangle whose size components are
+    /// both positive, adjusting the origin to compensate for any negative dimension.
+    pub fn standardize(self) -> GRect {
+        let mut r = self;
+        interface::grect_standardize(&mut r);
+        r
     }
 
-    /// True if `point` lies within the rectangle (origin inclusive, far edge exclusive).
-    pub const fn contains_point(self, point: GPoint) -> bool {
-        let r = self.standardize();
-        point.x >= r.origin.x
-            && point.x < r.origin.x + r.size.w
-            && point.y >= r.origin.y
-            && point.y < r.origin.y + r.size.h
+    /// `grect_center_point` — the center point of the rectangle.
+    pub fn center_point(&self) -> GPoint {
+        interface::grect_center_point(self)
     }
 
-    /// Shrinks (or, for negative values, expands) each edge by `crop_size`, keeping the
-    /// rectangle centered.
-    pub const fn crop(self, crop_size: i16) -> GRect {
-        self.inset(GEdgeInsets::all(crop_size))
+    /// `grect_contains_point` — true if `point` lies within the rectangle.
+    pub fn contains_point(&self, point: GPoint) -> bool {
+        interface::grect_contains_point(self, &point)
     }
 
-    /// Shrinks (or expands) the rectangle by the given edge insets. Standardizes first;
-    /// returns `GRect::ZERO` if the result would have a negative dimension.
-    pub const fn inset(self, insets: GEdgeInsets) -> GRect {
-        let r = self.standardize();
-        let w = r.size.w - insets.left - insets.right;
-        let h = r.size.h - insets.top - insets.bottom;
-        if w < 0 || h < 0 {
-            return GRect::ZERO;
-        }
-        GRect {
-            origin: GPoint { x: r.origin.x + insets.left, y: r.origin.y + insets.top },
-            size: GSize { w, h },
-        }
+    /// `grect_crop` — shrinks (or, for negative values, expands) each edge by
+    /// `crop_size_px`, keeping the rectangle centered.
+    pub fn crop(self, crop_size_px: i32) -> GRect {
+        interface::grect_crop(self, crop_size_px)
     }
 
-    /// Trims this rectangle to the area it shares with `clipper` (their intersection).
-    pub const fn clip(self, clipper: GRect) -> GRect {
-        let a = self.standardize();
-        let b = clipper.standardize();
-        let left = max_i16(a.origin.x, b.origin.x);
-        let top = max_i16(a.origin.y, b.origin.y);
-        let right = min_i16(a.origin.x + a.size.w, b.origin.x + b.size.w);
-        let bottom = min_i16(a.origin.y + a.size.h, b.origin.y + b.size.h);
-        if right <= left || bottom <= top {
-            return GRect::ZERO;
-        }
-        GRect {
-            origin: GPoint { x: left, y: top },
-            size: GSize { w: right - left, h: bottom - top },
-        }
+    /// `grect_inset` — shrinks (or expands) the rectangle by the given edge insets.
+    /// Standardizes first; returns `GRectZero` if the result would be negative.
+    pub fn inset(self, insets: GEdgeInsets) -> GRect {
+        interface::grect_inset(self, insets)
     }
 
-    /// Repositions this rectangle inside `inside_rect` according to `alignment`.
-    /// When `clip` is true, the result is trimmed to `inside_rect`.
-    pub const fn align(self, inside_rect: GRect, alignment: GAlign, clip: bool) -> GRect {
-        let inside = inside_rect.standardize();
-        let size = self.size;
-        let (x, y) = match alignment {
-            GAlign::TopLeft => (inside.origin.x, inside.origin.y),
-            GAlign::Top => (inside.origin.x + (inside.size.w - size.w) / 2, inside.origin.y),
-            GAlign::TopRight => (inside.origin.x + inside.size.w - size.w, inside.origin.y),
-            GAlign::Left => (inside.origin.x, inside.origin.y + (inside.size.h - size.h) / 2),
-            GAlign::Center => (
-                inside.origin.x + (inside.size.w - size.w) / 2,
-                inside.origin.y + (inside.size.h - size.h) / 2,
-            ),
-            GAlign::Right => (
-                inside.origin.x + inside.size.w - size.w,
-                inside.origin.y + (inside.size.h - size.h) / 2,
-            ),
-            GAlign::BottomLeft => (inside.origin.x, inside.origin.y + inside.size.h - size.h),
-            GAlign::Bottom => (
-                inside.origin.x + (inside.size.w - size.w) / 2,
-                inside.origin.y + inside.size.h - size.h,
-            ),
-            GAlign::BottomRight => (
-                inside.origin.x + inside.size.w - size.w,
-                inside.origin.y + inside.size.h - size.h,
-            ),
-        };
-        let aligned = GRect { origin: GPoint { x, y }, size };
-        if clip {
-            aligned.clip(inside)
-        } else {
-            aligned
-        }
+    /// `grect_clip` — trims this rectangle to the area it shares with `clipper`.
+    pub fn clip(self, clipper: GRect) -> GRect {
+        let mut r = self;
+        interface::grect_clip(&mut r, &clipper);
+        r
     }
-}
 
-const fn min_i16(a: i16, b: i16) -> i16 {
-    if a < b { a } else { b }
-}
-
-const fn max_i16(a: i16, b: i16) -> i16 {
-    if a > b { a } else { b }
+    /// `grect_align` — repositions this rectangle inside `inside_rect` according to
+    /// `alignment`. When `clip` is true, the result is trimmed to `inside_rect`.
+    pub fn align(self, inside_rect: GRect, alignment: GAlign, clip: bool) -> GRect {
+        let mut r = self;
+        interface::grect_align(&mut r, &inside_rect, alignment, clip);
+        r
+    }
 }
 
 /// Edge insets for shrinking/expanding a `GRect`, mirroring the C `GEdgeInsets` type and
 /// its CSS-style shorthand constructors. Negative values expand.
-#[derive(Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct GEdgeInsets {
     pub top: i16,
@@ -340,7 +287,7 @@ impl GEdgeInsets {
 
 /// Alignment of one rectangle within another, used by [`GRect::align`].
 #[repr(C)]
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone)]
 pub enum GAlign {
     Center = 0,
     TopLeft = 1,

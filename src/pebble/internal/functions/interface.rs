@@ -309,6 +309,50 @@ pub fn graphics_text_layout_get_content_size(text: &CStr, font: RawGFont, rect: 
     }
 }
 
+pub fn gpoint_equal(a: &GPoint, b: &GPoint) -> bool {
+    unsafe { declarations::gpoint_equal(a, b) }
+}
+
+pub fn gsize_equal(a: &GSize, b: &GSize) -> bool {
+    unsafe { declarations::gsize_equal(a, b) }
+}
+
+pub fn grect_equal(a: &GRect, b: &GRect) -> bool {
+    unsafe { declarations::grect_equal(a, b) }
+}
+
+pub fn grect_is_empty(rect: &GRect) -> bool {
+    unsafe { declarations::grect_is_empty(rect) }
+}
+
+pub fn grect_standardize(rect: &mut GRect) {
+    unsafe { declarations::grect_standardize(rect); }
+}
+
+pub fn grect_clip(rect_to_clip: &mut GRect, rect_clipper: &GRect) {
+    unsafe { declarations::grect_clip(rect_to_clip, rect_clipper); }
+}
+
+pub fn grect_contains_point(rect: &GRect, point: &GPoint) -> bool {
+    unsafe { declarations::grect_contains_point(rect, point) }
+}
+
+pub fn grect_center_point(rect: &GRect) -> GPoint {
+    unsafe { declarations::grect_center_point(rect) }
+}
+
+pub fn grect_crop(rect: GRect, crop_size_px: i32) -> GRect {
+    unsafe { declarations::grect_crop(rect, crop_size_px) }
+}
+
+pub fn grect_inset(rect: GRect, insets: GEdgeInsets) -> GRect {
+    unsafe { declarations::grect_inset(rect, insets) }
+}
+
+pub fn grect_align(rect: &mut GRect, inside_rect: &GRect, alignment: GAlign, clip: bool) {
+    unsafe { declarations::grect_align(rect, inside_rect, alignment, clip); }
+}
+
 pub fn gpath_create(init: *const GPathInfo) -> *mut RawGPath {
     unsafe { declarations::gpath_create(init) }
 }

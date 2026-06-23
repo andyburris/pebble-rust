@@ -87,6 +87,19 @@ unsafe extern "C" {
     pub unsafe fn graphics_draw_text(ctx: *mut GContext, text: *const c_char, font: RawGFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment, text_attributes: *mut c_void);
     pub unsafe fn graphics_text_layout_get_content_size(text: *const c_char, font: RawGFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) -> GSize;
 
+    // GRect / GPoint / GSize geometry helpers
+    pub unsafe fn gpoint_equal(point_a: *const GPoint, point_b: *const GPoint) -> bool;
+    pub unsafe fn gsize_equal(size_a: *const GSize, size_b: *const GSize) -> bool;
+    pub unsafe fn grect_equal(rect_a: *const GRect, rect_b: *const GRect) -> bool;
+    pub unsafe fn grect_is_empty(rect: *const GRect) -> bool;
+    pub unsafe fn grect_standardize(rect: *mut GRect);
+    pub unsafe fn grect_clip(rect_to_clip: *mut GRect, rect_clipper: *const GRect);
+    pub unsafe fn grect_contains_point(rect: *const GRect, point: *const GPoint) -> bool;
+    pub unsafe fn grect_center_point(rect: *const GRect) -> GPoint;
+    pub unsafe fn grect_crop(rect: GRect, crop_size_px: i32) -> GRect;
+    pub unsafe fn grect_inset(rect: GRect, insets: GEdgeInsets) -> GRect;
+    pub unsafe fn grect_align(rect: *mut GRect, inside_rect: *const GRect, alignment: GAlign, clip: bool);
+
     // GPath
     pub unsafe fn gpath_create(init: *const GPathInfo) -> *mut RawGPath;
     pub unsafe fn gpath_destroy(path: *mut RawGPath);
