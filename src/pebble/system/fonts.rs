@@ -39,7 +39,7 @@ impl FontKey {
 
 pub struct GFont {
     pub internal: RawGFont,
-    pub top_offset: u16,
+    pub top_offset: i16,
     pub total_margin: u16,
 }
 
@@ -47,7 +47,7 @@ impl GFont {
     pub fn get_system(key: FontKey) -> Self {
         unsafe {
             let internal = fonts_get_system_font(key.resource_id.as_ptr() as *const u8);
-            Self { internal, top_offset: (key.total_margin / 2), total_margin: key.total_margin }
+            Self { internal, top_offset: (key.total_margin / 2) as i16, total_margin: key.total_margin }
         }
     }
 

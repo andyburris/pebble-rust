@@ -114,29 +114,243 @@ pub struct tm {
     pub tm_isdst: u32
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 pub struct GPoint {
-    pub x: u16,
-    pub y: u16,
+    pub x: i16,
+    pub y: i16,
 }
 
 impl GPoint {
     pub const ORIGIN: GPoint = GPoint { x: 0, y: 0 };
+    pub const ZERO: GPoint = GPoint::ORIGIN;
+
+    pub const fn new(x: i16, y: i16) -> GPoint {
+        GPoint { x, y }
+    }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 pub struct GSize {
-    pub w: u16,
-    pub h: u16,
+    pub w: i16,
+    pub h: i16,
 }
 
-#[derive(Copy, Clone)]
+impl GSize {
+    pub const ZERO: GSize = GSize { w: 0, h: 0 };
+
+    pub const fn new(w: i16, h: i16) -> GSize {
+        GSize { w, h }
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 pub struct GRect {
     pub origin: GPoint,
     pub size: GSize,
+}
+
+impl GRect {
+    pub const ZERO: GRect = GRect { origin: GPoint::ZERO, size: GSize::ZERO };
+
+    /// Mirrors the C `GRect(x, y, w, h)` macro.
+    pub const fn new(x: i16, y: i16, w: i16, h: i16) -> GRect {
+        GRect { origin: GPoint { x, y }, size: GSize { w, h } }
+    }
+
+    /// True if the rectangle has no area (zero or negative width and/or height).
+    pub const fn is_empty(self) -> bool {
+        self.size.w <= 0 || self.size.h <= 0
+    }
+
+    /// Returns an equivalent rectangle whose size components are both positive,
+    /// adjusting the origin to compensate for any negative dimension.
+    pub const fn standardize(self) -> GRect {
+        let GRect { mut origin, mut size } = self;
+        if size.w < 0 {
+            origin.x += size.w;
+            size.w = -size.w;
+        }
+        if size.h < 0 {
+            origin.y += size.h;
+            size.h = -size.h;
+        }
+        GRect { origin, size }
+    }
+
+    /// Center point of the rectangle.
+    pub const fn center_point(self) -> GPoint {
+        GPoint {
+            x: self.origin.x + self.size.w / 2,
+            y: self.origin.y + self.size.h / 2,
+        }
+    }
+
+    /// True if `point` lies within the rectangle (origin inclusive, far edge exclusive).
+    pub const fn contains_point(self, point: GPoint) -> bool {
+        let r = self.standardize();
+        point.x >= r.origin.x
+            && point.x < r.origin.x + r.size.w
+            && point.y >= r.origin.y
+            && point.y < r.origin.y + r.size.h
+    }
+
+    /// Shrinks (or, for negative values, expands) each edge by `crop_size`, keeping the
+    /// rectangle centered.
+    pub const fn crop(self, crop_size: i16) -> GRect {
+        self.inset(GEdgeInsets::all(crop_size))
+    }
+
+    /// Shrinks (or expands) the rectangle by the given edge insets. Standardizes first;
+    /// returns `GRect::ZERO` if the result would have a negative dimension.
+    pub const fn inset(self, insets: GEdgeInsets) -> GRect {
+        let r = self.standardize();
+        let w = r.size.w - insets.left - insets.right;
+        let h = r.size.h - insets.top - insets.bottom;
+        if w < 0 || h < 0 {
+            return GRect::ZERO;
+        }
+        GRect {
+            origin: GPoint { x: r.origin.x + insets.left, y: r.origin.y + insets.top },
+            size: GSize { w, h },
+        }
+    }
+
+    /// Trims this rectangle to the area it shares with `clipper` (their intersection).
+    pub const fn clip(self, clipper: GRect) -> GRect {
+        let a = self.standardize();
+        let b = clipper.standardize();
+        let left = max_i16(a.origin.x, b.origin.x);
+        let top = max_i16(a.origin.y, b.origin.y);
+        let right = min_i16(a.origin.x + a.size.w, b.origin.x + b.size.w);
+        let bottom = min_i16(a.origin.y + a.size.h, b.origin.y + b.size.h);
+        if right <= left || bottom <= top {
+            return GRect::ZERO;
+        }
+        GRect {
+            origin: GPoint { x: left, y: top },
+            size: GSize { w: right - left, h: bottom - top },
+        }
+    }
+
+    /// Repositions this rectangle inside `inside_rect` according to `alignment`.
+    /// When `clip` is true, the result is trimmed to `inside_rect`.
+    pub const fn align(self, inside_rect: GRect, alignment: GAlign, clip: bool) -> GRect {
+        let inside = inside_rect.standardize();
+        let size = self.size;
+        let (x, y) = match alignment {
+            GAlign::TopLeft => (inside.origin.x, inside.origin.y),
+            GAlign::Top => (inside.origin.x + (inside.size.w - size.w) / 2, inside.origin.y),
+            GAlign::TopRight => (inside.origin.x + inside.size.w - size.w, inside.origin.y),
+            GAlign::Left => (inside.origin.x, inside.origin.y + (inside.size.h - size.h) / 2),
+            GAlign::Center => (
+                inside.origin.x + (inside.size.w - size.w) / 2,
+                inside.origin.y + (inside.size.h - size.h) / 2,
+            ),
+            GAlign::Right => (
+                inside.origin.x + inside.size.w - size.w,
+                inside.origin.y + (inside.size.h - size.h) / 2,
+            ),
+            GAlign::BottomLeft => (inside.origin.x, inside.origin.y + inside.size.h - size.h),
+            GAlign::Bottom => (
+                inside.origin.x + (inside.size.w - size.w) / 2,
+                inside.origin.y + inside.size.h - size.h,
+            ),
+            GAlign::BottomRight => (
+                inside.origin.x + inside.size.w - size.w,
+                inside.origin.y + inside.size.h - size.h,
+            ),
+        };
+        let aligned = GRect { origin: GPoint { x, y }, size };
+        if clip {
+            aligned.clip(inside)
+        } else {
+            aligned
+        }
+    }
+}
+
+const fn min_i16(a: i16, b: i16) -> i16 {
+    if a < b { a } else { b }
+}
+
+const fn max_i16(a: i16, b: i16) -> i16 {
+    if a > b { a } else { b }
+}
+
+/// Edge insets for shrinking/expanding a `GRect`, mirroring the C `GEdgeInsets` type and
+/// its CSS-style shorthand constructors. Negative values expand.
+#[derive(Copy, Clone, PartialEq, Eq, Default)]
+#[repr(C)]
+pub struct GEdgeInsets {
+    pub top: i16,
+    pub right: i16,
+    pub bottom: i16,
+    pub left: i16,
+}
+
+impl GEdgeInsets {
+    /// All four edges set explicitly.
+    pub const fn new(top: i16, right: i16, bottom: i16, left: i16) -> GEdgeInsets {
+        GEdgeInsets { top, right, bottom, left }
+    }
+
+    /// Same inset on every edge (C 1-arg shorthand).
+    pub const fn all(value: i16) -> GEdgeInsets {
+        GEdgeInsets { top: value, right: value, bottom: value, left: value }
+    }
+
+    /// Vertical (top & bottom) and horizontal (left & right) insets (C 2-arg shorthand).
+    pub const fn vh(vertical: i16, horizontal: i16) -> GEdgeInsets {
+        GEdgeInsets { top: vertical, right: horizontal, bottom: vertical, left: horizontal }
+    }
+
+    /// Horizontal-only insets (left & right); top & bottom are zero.
+    pub const fn x(value: i16) -> GEdgeInsets {
+        GEdgeInsets { top: 0, right: value, bottom: 0, left: value }
+    }
+
+    /// Vertical-only insets (top & bottom); left & right are zero.
+    pub const fn y(value: i16) -> GEdgeInsets {
+        GEdgeInsets { top: value, right: 0, bottom: value, left: 0 }
+    }
+
+    /// Top edge only; other edges zero.
+    pub const fn top(value: i16) -> GEdgeInsets {
+        GEdgeInsets { top: value, right: 0, bottom: 0, left: 0 }
+    }
+
+    /// Bottom edge only; other edges zero.
+    pub const fn bottom(value: i16) -> GEdgeInsets {
+        GEdgeInsets { top: 0, right: 0, bottom: value, left: 0 }
+    }
+
+    /// Left edge only; other edges zero.
+    pub const fn left(value: i16) -> GEdgeInsets {
+        GEdgeInsets { top: 0, right: 0, bottom: 0, left: value }
+    }
+
+    /// Right edge only; other edges zero.
+    pub const fn right(value: i16) -> GEdgeInsets {
+        GEdgeInsets { top: 0, right: value, bottom: 0, left: 0 }
+    }
+}
+
+/// Alignment of one rectangle within another, used by [`GRect::align`].
+#[repr(C)]
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub enum GAlign {
+    Center = 0,
+    TopLeft = 1,
+    TopRight = 2,
+    Top = 3,
+    Left = 4,
+    Bottom = 5,
+    Right = 6,
+    BottomRight = 7,
+    BottomLeft = 8,
 }
 
 #[repr(C)]
