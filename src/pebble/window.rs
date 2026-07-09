@@ -19,8 +19,9 @@
 use crate::pebble::internal::{types, functions::interface};
 use crate::pebble::types::GColor;
 use crate::pebble::WindowPtr;
-use crate::pebble::layer::Layer;
+use crate::pebble::layer::LayerRef;
 
+/// An owned window: created with `Window::new` and destroyed on drop.
 pub struct Window {
     internal: *mut types::RawWindow
 }
@@ -37,12 +38,6 @@ impl Window {
     pub fn new() -> Window {
         Window {
             internal: interface::window_create()
-        }
-    }
-
-    pub fn from_raw(ptr: WindowPtr) -> Window {
-        Window {
-            internal: ptr
         }
     }
 
@@ -68,13 +63,9 @@ impl Window {
         interface::window_set_background_color(self.internal, color);
     }
 
-    pub fn get_root_layer(&self) -> Layer {
+    pub fn get_root_layer(&self) -> LayerRef {
         let layer_ptr = interface::window_get_root_layer(self.internal);
-        Layer::from_raw(layer_ptr)
-    }
-
-    pub fn clean_exit(&self) {
-        interface::window_destroy(self.internal);
+        LayerRef::from_raw(layer_ptr)
     }
 
     pub fn set_user_data<T>(&self, data: *mut T) {
@@ -85,7 +76,39 @@ impl Window {
         interface::window_get_user_data(self.internal)
     }
 
-    pub fn raw(&self) -> crate::pebble::WindowPtr {
+    pub fn raw(&self) -> WindowPtr {
+        self.internal
+    }
+}
+
+impl Drop for Window {
+    fn drop(&mut self) {
+        interface::window_destroy(self.internal);
+    }
+}
+
+/// A non-owning handle to a window the app does not own — used by the window
+/// event callbacks (load/unload/appear/disappear), which receive a raw
+/// `WindowPtr` owned by the window stack. Copyable; never destroys the window.
+#[derive(Copy, Clone)]
+pub struct WindowRef {
+    internal: *mut types::RawWindow,
+}
+
+impl WindowRef {
+    pub fn from_raw(ptr: WindowPtr) -> WindowRef {
+        WindowRef { internal: ptr }
+    }
+
+    pub fn get_root_layer(&self) -> LayerRef {
+        LayerRef::from_raw(interface::window_get_root_layer(self.internal))
+    }
+
+    pub fn get_user_data<T>(&self) -> *mut T {
+        interface::window_get_user_data(self.internal)
+    }
+
+    pub fn raw(&self) -> WindowPtr {
         self.internal
     }
 }

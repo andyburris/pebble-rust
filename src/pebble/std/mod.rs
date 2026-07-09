@@ -23,6 +23,10 @@ pub mod string;
 pub mod math;
 pub mod memory;
 
-pub use format::{PblDisplay, pbl_format_impl, push_i32, push_u32};
+pub use format::PblDisplay;
+// Plumbing the `pbl_format!` macro expands to — public so the macro works from
+// other crates, but hidden from docs (not meant to be called directly).
+#[doc(hidden)]
+pub use format::{pbl_format_impl, push_i32, push_u32};
 pub use string::ToCString;
 pub use time::TimeInfo;

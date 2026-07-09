@@ -65,6 +65,11 @@ impl TimeInfo {
         TimeInfo::from_utc(time())
     }
 
+    /// Wrap a raw C `struct tm` (e.g. the one handed to a tick handler).
+    pub fn from_raw(raw: tm) -> TimeInfo {
+        TimeInfo(raw)
+    }
+
     /// The underlying C `struct tm`, if you need the raw broken-down fields.
     pub fn raw(&self) -> tm {
         self.0

@@ -98,117 +98,147 @@ pub fn window_stack_push(window: *mut RawWindow, animate: bool) {
     }
 }
 
-pub fn window_get_root_layer(window: *mut RawWindow) -> *mut Layer {
+pub fn window_get_root_layer(window: *mut RawWindow) -> *mut RawLayer {
     unsafe {
         declarations::window_get_root_layer(window)
     }
 }
 
-pub fn window_single_click_subscribe<T>(button: u8, func: extern "C" fn(*mut ClickRecognizer, *mut T)) {
+pub fn window_single_click_subscribe(button: u8, func: extern "C" fn(*mut ClickRecognizer, *mut u8)) {
     unsafe {
-        declarations::window_single_click_subscribe(button, mem::transmute(func));
+        declarations::window_single_click_subscribe(button, func);
     }
 }
 
-pub fn window_long_click_subscribe<T>(button: u8, handler: extern "C" fn(*mut ClickRecognizer, *mut T)) {
+pub fn window_single_repeating_click_subscribe(button: u8, repeat_interval_ms: u16, func: extern "C" fn(*mut ClickRecognizer, *mut u8)) {
     unsafe {
-        declarations::window_long_click_subscribe(button, 0, Some(mem::transmute(handler)), None);
+        declarations::window_single_repeating_click_subscribe(button, repeat_interval_ms, func);
     }
 }
 
-pub fn layer_create(bounds: GRect) -> *mut Layer {
+pub fn window_long_click_subscribe(button: u8, delay_ms: u16, down: Option<extern "C" fn(*mut ClickRecognizer, *mut u8)>, up: Option<extern "C" fn(*mut ClickRecognizer, *mut u8)>) {
+    unsafe {
+        declarations::window_long_click_subscribe(button, delay_ms, down, up);
+    }
+}
+
+pub fn window_multi_click_subscribe(button: u8, min_clicks: u8, max_clicks: u8, timeout: u16, last_click_only: bool, func: extern "C" fn(*mut ClickRecognizer, *mut u8)) {
+    unsafe {
+        declarations::window_multi_click_subscribe(button, min_clicks, max_clicks, timeout, last_click_only, func);
+    }
+}
+
+pub fn layer_create(bounds: GRect) -> *mut RawLayer {
     unsafe {
         declarations::layer_create(bounds)
     }
 }
 
-pub fn layer_create_with_data(bounds: GRect, data_size: usize) -> *mut Layer {
+pub fn layer_create_with_data(bounds: GRect, data_size: usize) -> *mut RawLayer {
     unsafe {
         declarations::layer_create_with_data(bounds, data_size)
     }
 }
 
-pub fn layer_get_data(layer: *const Layer) -> *mut c_void {
+pub fn layer_get_data(layer: *const RawLayer) -> *mut c_void {
     unsafe {
         declarations::layer_get_data(layer)
     }
 }
 
-pub fn layer_destroy(layer: *mut Layer) {
+pub fn layer_destroy(layer: *mut RawLayer) {
     unsafe {
         declarations::layer_destroy(layer);
     }
 }
 
-pub fn layer_get_frame(layer: *mut Layer) -> GRect {
+pub fn layer_get_frame(layer: *mut RawLayer) -> GRect {
     unsafe {
         declarations::layer_get_frame(layer)
     }
 }
 
-pub fn layer_get_bounds(layer: *mut Layer) -> GRect {
+pub fn layer_set_frame(layer: *mut RawLayer, frame: GRect) {
+    unsafe {
+        declarations::layer_set_frame(layer, frame);
+    }
+}
+
+pub fn layer_get_bounds(layer: *mut RawLayer) -> GRect {
     unsafe {
         declarations::layer_get_bounds(layer)
     }
 }
 
-pub fn layer_add_child(layer: *mut Layer, child: *mut Layer) {
+pub fn layer_add_child(layer: *mut RawLayer, child: *mut RawLayer) {
     unsafe {
         declarations::layer_add_child(layer, child);
     }
 }
 
-pub fn layer_mark_dirty(layer: *mut Layer) {
+pub fn layer_remove_from_parent(layer: *mut RawLayer) {
+    unsafe {
+        declarations::layer_remove_from_parent(layer);
+    }
+}
+
+pub fn layer_mark_dirty(layer: *mut RawLayer) {
     unsafe {
         declarations::layer_mark_dirty(layer);
     }
 }
 
-pub fn layer_set_update_proc(layer: *mut Layer, func: extern "C" fn(*mut Layer, *mut GContext)) {
+pub fn layer_set_update_proc(layer: *mut RawLayer, func: extern "C" fn(*mut RawLayer, *mut GContext)) {
     unsafe {
         declarations::layer_set_update_proc(layer, func);
     }
 }
 
-pub fn layer_set_hidden(layer: *mut Layer, hidden: bool) {
+pub fn layer_set_hidden(layer: *mut RawLayer, hidden: bool) {
     unsafe {
         declarations::layer_set_hidden(layer, hidden);
     }
 }
 
-pub fn text_layer_create(bounds: GRect) -> *mut TextLayer {
+pub fn text_layer_create(bounds: GRect) -> *mut RawTextLayer {
     unsafe {
         declarations::text_layer_create(bounds)
     }
 }
 
-pub fn text_layer_set_text(layer: *mut TextLayer, text: &CStr) {
+pub fn text_layer_destroy(layer: *mut RawTextLayer) {
+    unsafe {
+        declarations::text_layer_destroy(layer);
+    }
+}
+
+pub fn text_layer_set_text(layer: *mut RawTextLayer, text: &CStr) {
     unsafe {
         declarations::text_layer_set_text(layer, text.as_ptr() as *const u8);
     }
 }
 
-pub fn text_layer_set_font(layer: *mut TextLayer, font: RawGFont) {
+pub fn text_layer_set_font(layer: *mut RawTextLayer, font: RawGFont) {
     unsafe {
         declarations::text_layer_set_font(layer, font);
     }
 }
 
-pub fn text_layer_get_layer(layer: *mut TextLayer) -> *mut Layer {
+pub fn text_layer_get_layer(layer: *mut RawTextLayer) -> *mut RawLayer {
     unsafe {
         declarations::text_layer_get_layer(layer)
     }
 }
 
-pub fn text_layer_set_background_color(layer: *mut TextLayer, color: GColor) {
+pub fn text_layer_set_background_color(layer: *mut RawTextLayer, color: GColor) {
     unsafe { declarations::text_layer_set_background_color(layer, color); }
 }
 
-pub fn text_layer_set_text_color(layer: *mut TextLayer, color: GColor) {
+pub fn text_layer_set_text_color(layer: *mut RawTextLayer, color: GColor) {
     unsafe { declarations::text_layer_set_text_color(layer, color); }
 }
 
-pub fn text_layer_set_text_alignment(layer: *mut TextLayer, alignment: GTextAlignment) {
+pub fn text_layer_set_text_alignment(layer: *mut RawTextLayer, alignment: GTextAlignment) {
     unsafe { declarations::text_layer_set_text_alignment(layer, alignment); }
 }
 
@@ -218,25 +248,31 @@ pub fn gbitmap_create_with_resource(id: u32) -> *mut RawGBitmap {
     }
 }
 
-pub fn bitmap_layer_create(frame: GRect) -> *mut BitmapLayer {
+pub fn bitmap_layer_create(frame: GRect) -> *mut RawBitmapLayer {
     unsafe {
         declarations::bitmap_layer_create(frame)
     }
 }
 
-pub fn bitmap_layer_set_bitmap(layer: *mut BitmapLayer, bitmap: *mut RawGBitmap) {
+pub fn bitmap_layer_destroy(layer: *mut RawBitmapLayer) {
+    unsafe {
+        declarations::bitmap_layer_destroy(layer);
+    }
+}
+
+pub fn bitmap_layer_set_bitmap(layer: *mut RawBitmapLayer, bitmap: *mut RawGBitmap) {
     unsafe {
         declarations::bitmap_layer_set_bitmap(layer, bitmap);
     }
 }
 
-pub fn bitmap_layer_set_compositing_mode(layer: *mut BitmapLayer, mode: GCompOp) {
+pub fn bitmap_layer_set_compositing_mode(layer: *mut RawBitmapLayer, mode: GCompOp) {
     unsafe {
         declarations::bitmap_layer_set_compositing_mode(layer, mode);
     }
 }
 
-pub fn bitmap_layer_get_layer(layer: *mut BitmapLayer) -> *mut Layer {
+pub fn bitmap_layer_get_layer(layer: *mut RawBitmapLayer) -> *mut RawLayer {
     unsafe {
         declarations::bitmap_layer_get_layer(layer)
     }
@@ -396,7 +432,7 @@ pub fn clock_is_24h_style() -> bool {
     }
 }
 
-pub fn tick_timer_service_subscribe(unit: TimeUnits, func: extern "C" fn(*mut tm, TimeUnits)) {
+pub fn tick_timer_service_subscribe(unit: TimeUnits, func: extern "C" fn(*mut tm, u32)) {
     unsafe {
         declarations::tick_timer_service_subscribe(unit, func);
     }
@@ -441,67 +477,67 @@ pub fn app_log(level: u8, msg: &str, name: &str) {
     }
 }
 
-pub fn menu_layer_create(frame: GRect) -> *mut MenuLayer {
+pub fn menu_layer_create(frame: GRect) -> *mut RawMenuLayer {
     unsafe { declarations::menu_layer_create(frame) }
 }
 
-pub fn menu_layer_destroy(menu_layer: *mut MenuLayer) {
+pub fn menu_layer_destroy(menu_layer: *mut RawMenuLayer) {
     unsafe { declarations::menu_layer_destroy(menu_layer); }
 }
 
-pub fn menu_layer_get_layer(menu_layer: *mut MenuLayer) -> *mut Layer {
+pub fn menu_layer_get_layer(menu_layer: *mut RawMenuLayer) -> *mut RawLayer {
     unsafe { declarations::menu_layer_get_layer(menu_layer) }
 }
 
-pub fn menu_layer_set_callbacks<T>(menu_layer: *mut MenuLayer, context: *mut T, callbacks: MenuLayerCallbacks) {
+pub fn menu_layer_set_callbacks<T>(menu_layer: *mut RawMenuLayer, context: *mut T, callbacks: MenuLayerCallbacks) {
     unsafe { declarations::menu_layer_set_callbacks(menu_layer, context as *mut c_void, callbacks); }
 }
 
-pub fn menu_layer_set_click_config_onto_window(menu_layer: *mut MenuLayer, window: *mut RawWindow) {
+pub fn menu_layer_set_click_config_onto_window(menu_layer: *mut RawMenuLayer, window: *mut RawWindow) {
     unsafe { declarations::menu_layer_set_click_config_onto_window(menu_layer, window); }
 }
 
-pub fn menu_layer_set_highlight_colors(menu_layer: *mut MenuLayer, background: GColor, foreground: GColor) {
+pub fn menu_layer_set_highlight_colors(menu_layer: *mut RawMenuLayer, background: GColor, foreground: GColor) {
     unsafe { declarations::menu_layer_set_highlight_colors(menu_layer, background, foreground); }
 }
 
-pub fn menu_layer_set_normal_colors(menu_layer: *mut MenuLayer, background: GColor, foreground: GColor) {
+pub fn menu_layer_set_normal_colors(menu_layer: *mut RawMenuLayer, background: GColor, foreground: GColor) {
     unsafe { declarations::menu_layer_set_normal_colors(menu_layer, background, foreground); }
 }
 
-pub fn menu_layer_reload_data(menu_layer: *mut MenuLayer) {
+pub fn menu_layer_reload_data(menu_layer: *mut RawMenuLayer) {
     unsafe { declarations::menu_layer_reload_data(menu_layer); }
 }
 
-pub fn menu_layer_get_selected_index(menu_layer: *mut MenuLayer) -> MenuIndex {
+pub fn menu_layer_get_selected_index(menu_layer: *mut RawMenuLayer) -> MenuIndex {
     unsafe { declarations::menu_layer_get_selected_index(menu_layer) }
 }
 
-pub fn menu_layer_is_index_selected(menu_layer: *mut MenuLayer, index: &MenuIndex) -> bool {
+pub fn menu_layer_is_index_selected(menu_layer: *mut RawMenuLayer, index: &MenuIndex) -> bool {
     unsafe { declarations::menu_layer_is_index_selected(menu_layer, index) }
 }
 
-pub fn menu_layer_get_center_focused(menu_layer: *mut MenuLayer) -> bool {
+pub fn menu_layer_get_center_focused(menu_layer: *mut RawMenuLayer) -> bool {
     unsafe { declarations::menu_layer_get_center_focused(menu_layer) }
 }
 
-pub fn menu_layer_set_center_focused(menu_layer: *mut MenuLayer, center_focused: bool) {
+pub fn menu_layer_set_center_focused(menu_layer: *mut RawMenuLayer, center_focused: bool) {
     unsafe { declarations::menu_layer_set_center_focused(menu_layer, center_focused); }
 }
 
-pub fn menu_layer_set_selected_index(menu_layer: *mut MenuLayer, index: MenuIndex, scroll_align: MenuRowAlign, animated: bool) {
+pub fn menu_layer_set_selected_index(menu_layer: *mut RawMenuLayer, index: MenuIndex, scroll_align: MenuRowAlign, animated: bool) {
     unsafe { declarations::menu_layer_set_selected_index(menu_layer, index, scroll_align, animated); }
 }
 
-pub fn menu_layer_set_selected_next(menu_layer: *mut MenuLayer, up: bool, scroll_align: MenuRowAlign, animated: bool) {
+pub fn menu_layer_set_selected_next(menu_layer: *mut RawMenuLayer, up: bool, scroll_align: MenuRowAlign, animated: bool) {
     unsafe { declarations::menu_layer_set_selected_next(menu_layer, up, scroll_align, animated); }
 }
 
-pub fn menu_layer_pad_bottom_enable(menu_layer: *mut MenuLayer, enable: bool) {
+pub fn menu_layer_pad_bottom_enable(menu_layer: *mut RawMenuLayer, enable: bool) {
     unsafe { declarations::menu_layer_pad_bottom_enable(menu_layer, enable); }
 }
 
-pub fn menu_cell_basic_draw(ctx: *mut GContext, cell: *const Layer, title: Option<&CStr>, subtitle: Option<&CStr>, icon: Option<*mut RawGBitmap>) {
+pub fn menu_cell_basic_draw(ctx: *mut GContext, cell: *const RawLayer, title: Option<&CStr>, subtitle: Option<&CStr>, icon: Option<*mut RawGBitmap>) {
     unsafe {
         declarations::menu_cell_basic_draw(
             ctx, cell,
@@ -512,54 +548,110 @@ pub fn menu_cell_basic_draw(ctx: *mut GContext, cell: *const Layer, title: Optio
     }
 }
 
-pub fn menu_cell_basic_header_draw(ctx: *mut GContext, cell: *const Layer, title: &CStr) {
+pub fn menu_cell_basic_header_draw(ctx: *mut GContext, cell: *const RawLayer, title: &CStr) {
     unsafe { declarations::menu_cell_basic_header_draw(ctx, cell, title.as_ptr() as *const u8); }
 }
 
-pub fn menu_cell_title_draw(ctx: *mut GContext, cell: *const Layer, title: &CStr) {
+pub fn menu_cell_title_draw(ctx: *mut GContext, cell: *const RawLayer, title: &CStr) {
     unsafe { declarations::menu_cell_title_draw(ctx, cell, title.as_ptr() as *const u8); }
 }
 
-pub fn menu_cell_layer_is_highlighted(cell: *const Layer) -> bool {
+pub fn menu_cell_layer_is_highlighted(cell: *const RawLayer) -> bool {
     unsafe { declarations::menu_cell_layer_is_highlighted(cell) }
 }
 
-pub fn animation_create() -> *mut Animation {
+pub fn animation_create() -> *mut RawAnimation {
     unsafe { declarations::animation_create() }
 }
 
-pub fn animation_destroy(animation: *mut Animation) -> bool {
+pub fn animation_destroy(animation: *mut RawAnimation) -> bool {
     unsafe { declarations::animation_destroy(animation) }
 }
 
-pub fn animation_schedule(animation: *mut Animation) -> bool {
+pub fn animation_schedule(animation: *mut RawAnimation) -> bool {
     unsafe { declarations::animation_schedule(animation) }
 }
 
-pub fn animation_unschedule(animation: *mut Animation) -> bool {
+pub fn animation_unschedule(animation: *mut RawAnimation) -> bool {
     unsafe { declarations::animation_unschedule(animation) }
 }
 
-pub fn animation_set_duration(animation: *mut Animation, duration_ms: u32) {
+pub fn animation_set_duration(animation: *mut RawAnimation, duration_ms: u32) {
     unsafe { declarations::animation_set_duration(animation, duration_ms) }
 }
 
-pub fn animation_set_delay(animation: *mut Animation, delay_ms: u32) {
+pub fn animation_set_delay(animation: *mut RawAnimation, delay_ms: u32) {
     unsafe { declarations::animation_set_delay(animation, delay_ms) }
 }
 
-pub fn animation_set_curve(animation: *mut Animation, curve: AnimationCurve) {
+pub fn animation_set_play_count(animation: *mut RawAnimation, play_count: u32) {
+    unsafe { declarations::animation_set_play_count(animation, play_count) }
+}
+
+pub fn animation_set_reverse(animation: *mut RawAnimation, reverse: bool) {
+    unsafe { declarations::animation_set_reverse(animation, reverse) }
+}
+
+pub fn animation_set_curve(animation: *mut RawAnimation, curve: AnimationCurve) {
     unsafe { declarations::animation_set_curve(animation, curve) }
 }
 
-pub fn animation_set_handlers(animation: *mut Animation, handlers: AnimationHandlers, context: *mut u8) {
+pub fn animation_set_handlers(animation: *mut RawAnimation, handlers: AnimationHandlers, context: *mut u8) {
     unsafe { declarations::animation_set_handlers(animation, handlers, context) }
 }
 
-pub fn animation_get_context<T>(animation: *const Animation) -> *mut T {
+pub fn animation_get_context<T>(animation: *const RawAnimation) -> *mut T {
     unsafe { declarations::animation_get_context(animation) as *mut T }
 }
 
-pub fn animation_set_implementation(animation: *mut Animation, implementation: *const AnimationImplementation) {
+pub fn animation_set_implementation(animation: *mut RawAnimation, implementation: *const AnimationImplementation) {
     unsafe { declarations::animation_set_implementation(animation, implementation) }
+}
+
+pub fn status_bar_layer_create() -> *mut RawStatusBarLayer {
+    unsafe { declarations::status_bar_layer_create() }
+}
+
+pub fn status_bar_layer_destroy(status_bar_layer: *mut RawStatusBarLayer) {
+    unsafe { declarations::status_bar_layer_destroy(status_bar_layer) }
+}
+
+pub fn status_bar_layer_get_layer(status_bar_layer: *mut RawStatusBarLayer) -> *mut RawLayer {
+    unsafe { declarations::status_bar_layer_get_layer(status_bar_layer) }
+}
+
+pub fn status_bar_layer_set_colors(status_bar_layer: *mut RawStatusBarLayer, foreground: GColor, background: GColor) {
+    unsafe { declarations::status_bar_layer_set_colors(status_bar_layer, foreground, background) }
+}
+
+pub fn status_bar_layer_set_separator_mode(status_bar_layer: *mut RawStatusBarLayer, mode: StatusBarLayerSeparatorMode) {
+    unsafe { declarations::status_bar_layer_set_separator_mode(status_bar_layer, mode) }
+}
+
+pub fn status_bar_layer_get_foreground_color(status_bar_layer: *mut RawStatusBarLayer) -> GColor {
+    unsafe { declarations::status_bar_layer_get_foreground_color(status_bar_layer) }
+}
+
+pub fn status_bar_layer_get_background_color(status_bar_layer: *mut RawStatusBarLayer) -> GColor {
+    unsafe { declarations::status_bar_layer_get_background_color(status_bar_layer) }
+}
+
+pub fn content_indicator_create() -> *mut RawContentIndicator {
+    unsafe { declarations::content_indicator_create() }
+}
+
+pub fn content_indicator_destroy(content_indicator: *mut RawContentIndicator) {
+    unsafe { declarations::content_indicator_destroy(content_indicator) }
+}
+
+pub fn content_indicator_configure_direction(content_indicator: *mut RawContentIndicator, direction: ContentIndicatorDirection, config: *const ContentIndicatorConfig) -> bool {
+    unsafe { declarations::content_indicator_configure_direction(content_indicator, direction, config) }
+}
+
+pub fn content_indicator_set_content_available(content_indicator: *mut RawContentIndicator, direction: ContentIndicatorDirection, available: bool) -> bool {
+    unsafe { declarations::content_indicator_set_content_available(content_indicator, direction, available) }
+}
+
+pub fn content_indicator_get_content_available(content_indicator: *mut RawContentIndicator, direction: ContentIndicatorDirection) -> bool {
+    unsafe { declarations::content_indicator_get_content_available(content_indicator, direction) }
 }

@@ -32,8 +32,8 @@ use crate::pebble::system::fonts::GFont;
 use crate::pebble::types::GBitmap;
 
 pub enum RawWindow {}
-pub enum Layer {}
-pub enum TextLayer {}
+pub enum RawLayer {}
+pub enum RawTextLayer {}
 pub enum ClickRecognizer {}
 pub enum RawGBitmap {}
 pub enum GContext {}
@@ -95,8 +95,8 @@ pub struct RawGPath {
     pub offset: GPoint,
 }
 
-pub enum BitmapLayer {}
-pub enum MenuLayer {}
+pub enum RawBitmapLayer {}
+pub enum RawMenuLayer {}
 
 /// Seconds since the Unix epoch. Pebble's `time_t` (docs: "unsigned int").
 pub type time_t = u32;
@@ -333,6 +333,7 @@ pub enum GCornerMask {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub enum GTextAlignment {
     Left = 0,
     Center = 1,
@@ -340,6 +341,7 @@ pub enum GTextAlignment {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub enum GTextOverflowMode {
     WordWrap = 0,
     TrailingEllipsis = 1,
@@ -431,14 +433,17 @@ impl GColor {
     pub const White: GColor = GColor(0xFF);
 }
 
+// Pebble's `TimeUnits` is a bitmask: the tick handler's `units_changed` argument
+// ORs together every unit that rolled over this tick. Subscribe with a single unit.
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub enum TimeUnits {
-    SECOND_UNIT=1,
-    MINUTE_UNIT,
-    HOUR_UNIT,
-    DAY_UNIT,
-    MONTH_UNIT,
-    YEAR_UNIT
+    SECOND_UNIT = 1 << 0,
+    MINUTE_UNIT = 1 << 1,
+    HOUR_UNIT   = 1 << 2,
+    DAY_UNIT    = 1 << 3,
+    MONTH_UNIT  = 1 << 4,
+    YEAR_UNIT   = 1 << 5,
 }
 
 pub type ResHandle = c_void;
@@ -597,23 +602,24 @@ pub struct MenuLayerCallbacks {
     pub get_num_rows:          Option<extern "C" fn(*mut u8, u16, *mut ()) -> u16>,
     pub get_cell_height:       Option<extern "C" fn(*mut u8, *const MenuIndex, *mut ()) -> i16>,
     pub get_header_height:     Option<extern "C" fn(*mut u8, u16, *mut ()) -> i16>,
-    pub draw_row:              Option<extern "C" fn(*mut GContext, *const Layer, *const MenuIndex, *mut ())>,
-    pub draw_header:           Option<extern "C" fn(*mut GContext, *const Layer, u16, *mut ())>,
+    pub draw_row:              Option<extern "C" fn(*mut GContext, *const RawLayer, *const MenuIndex, *mut ())>,
+    pub draw_header:           Option<extern "C" fn(*mut GContext, *const RawLayer, u16, *mut ())>,
     pub select_click:          Option<extern "C" fn(*mut u8, *const MenuIndex, *mut ())>,
     pub select_long_click:     Option<extern "C" fn(*mut u8, *const MenuIndex, *mut ())>,
     pub selection_changed:     Option<extern "C" fn(*mut u8, MenuIndex, MenuIndex, *mut ())>,
     pub get_separator_height:  Option<extern "C" fn(*mut u8, *const MenuIndex, *mut ()) -> i16>,
-    pub draw_separator:        Option<extern "C" fn(*mut GContext, *const Layer, *const MenuIndex, *mut ())>,
+    pub draw_separator:        Option<extern "C" fn(*mut GContext, *const RawLayer, *const MenuIndex, *mut ())>,
     pub selection_will_change: Option<extern "C" fn(*mut u8, *mut MenuIndex, MenuIndex, *mut ())>,
-    pub draw_background:       Option<extern "C" fn(*mut GContext, *const Layer, bool, *mut ())>,
+    pub draw_background:       Option<extern "C" fn(*mut GContext, *const RawLayer, bool, *mut ())>,
 }
 
-pub enum Animation {}
+pub enum RawAnimation {}
 
 pub type AnimationProgress = u32;
 pub const ANIMATION_NORMALIZED_MAX: AnimationProgress = 65535;
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub enum AnimationCurve {
     EaseIn    = 0,
     EaseOut   = 1,
@@ -623,13 +629,46 @@ pub enum AnimationCurve {
 
 #[repr(C)]
 pub struct AnimationImplementation {
-    pub setup:    Option<extern "C" fn(*mut Animation)>,
-    pub update:   Option<extern "C" fn(*mut Animation, AnimationProgress)>,
-    pub teardown: Option<extern "C" fn(*mut Animation)>,
+    pub setup:    Option<extern "C" fn(*mut RawAnimation)>,
+    pub update:   Option<extern "C" fn(*mut RawAnimation, AnimationProgress)>,
+    pub teardown: Option<extern "C" fn(*mut RawAnimation)>,
 }
 
 #[repr(C)]
 pub struct AnimationHandlers {
-    pub started: Option<extern "C" fn(*mut Animation, *mut u8)>,
-    pub stopped: Option<extern "C" fn(*mut Animation, bool, *mut u8)>,
+    pub started: Option<extern "C" fn(*mut RawAnimation, *mut u8)>,
+    pub stopped: Option<extern "C" fn(*mut RawAnimation, bool, *mut u8)>,
+}
+
+pub enum RawStatusBarLayer {}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub enum StatusBarLayerSeparatorMode {
+    None = 0,
+    Dotted = 1,
+}
+
+pub enum RawContentIndicator {}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub enum ContentIndicatorDirection {
+    Up = 0,
+    Down = 1,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct ContentIndicatorConfigColors {
+    pub foreground: GColor,
+    pub background: GColor,
+}
+
+#[repr(C)]
+pub struct ContentIndicatorConfig {
+    pub layer: *mut RawLayer,
+    pub times_out: bool,
+    pub alignment: GAlign,
+    pub colors: ContentIndicatorConfigColors,
 }

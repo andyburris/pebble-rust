@@ -24,6 +24,8 @@ pub mod click;
 pub mod window;
 pub mod types;
 pub mod layer;
+pub mod status_bar;
+pub mod content_indicator;
 pub mod std;
 pub mod system;
 pub mod app_message;
@@ -39,7 +41,7 @@ pub type WindowPtr = *mut RawWindow;
 
 pub use internal::types::GContext;
 pub use internal::types::RawGBitmap;
-pub use internal::types::Layer as RawLayer;
+pub use internal::types::RawLayer;
 
 pub type Result<T> = core::result::Result<T, &'static str>;
 

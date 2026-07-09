@@ -9,7 +9,7 @@ use pebble::{app, window, WindowPtr};
 use pebble::app_message::{AppMessage, AppMessageDict};
 use pebble::layer::{AsLayer, TextLayer};
 use pebble::types::{DictPtr, GPoint, GRect, GSize, VoidPtr};
-use pebble::window::WindowHandlers;
+use pebble::window::{WindowHandlers, WindowRef};
 use crate::pebble::std::ToCString;
 
 const MESSAGE_KEY_EXAMPLE: u32 = 1768777472;
@@ -31,7 +31,7 @@ pub fn main() -> isize {
     });
     window.push(false);
     app.run_event_loop();
-    window.clean_exit();
+    // `window` is destroyed when it drops at the end of main.
 
     pbl_log!("Exiting.");
     0
@@ -53,7 +53,7 @@ extern "C" fn message_received(dict_ptr: DictPtr, _ctx: VoidPtr) {
 extern "C" fn load_handler(window: WindowPtr) {
     pbl_log!("Window loaded at address %p", window);
 
-    let window = window::Window::from_raw(window);
+    let window = WindowRef::from_raw(window);
     let root = window.get_root_layer();
     let bounds = root.get_bounds();
 
