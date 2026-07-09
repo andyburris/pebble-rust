@@ -24,8 +24,8 @@ impl StatusBarLayer {
         StatusBarLayer { internal, inner }
     }
 
-    pub fn set_colors(&self, foreground: GColor, background: GColor) {
-        interface::status_bar_layer_set_colors(self.internal, foreground, background);
+    pub fn set_colors(&self, background: GColor, foreground: GColor) {
+        interface::status_bar_layer_set_colors(self.internal, background, foreground);
     }
 
     pub fn set_separator_mode(&self, mode: StatusBarLayerSeparatorMode) {

@@ -620,8 +620,8 @@ pub fn status_bar_layer_get_layer(status_bar_layer: *mut RawStatusBarLayer) -> *
     unsafe { declarations::status_bar_layer_get_layer(status_bar_layer) }
 }
 
-pub fn status_bar_layer_set_colors(status_bar_layer: *mut RawStatusBarLayer, foreground: GColor, background: GColor) {
-    unsafe { declarations::status_bar_layer_set_colors(status_bar_layer, foreground, background) }
+pub fn status_bar_layer_set_colors(status_bar_layer: *mut RawStatusBarLayer, background: GColor, foreground: GColor) {
+    unsafe { declarations::status_bar_layer_set_colors(status_bar_layer, background, foreground) }
 }
 
 pub fn status_bar_layer_set_separator_mode(status_bar_layer: *mut RawStatusBarLayer, mode: StatusBarLayerSeparatorMode) {

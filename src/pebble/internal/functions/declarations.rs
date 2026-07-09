@@ -240,7 +240,7 @@ unsafe extern "C" {
     pub unsafe fn status_bar_layer_create() -> *mut RawStatusBarLayer;
     pub unsafe fn status_bar_layer_destroy(status_bar_layer: *mut RawStatusBarLayer);
     pub unsafe fn status_bar_layer_get_layer(status_bar_layer: *mut RawStatusBarLayer) -> *mut RawLayer;
-    pub unsafe fn status_bar_layer_set_colors(status_bar_layer: *mut RawStatusBarLayer, foreground: GColor, background: GColor);
+    pub unsafe fn status_bar_layer_set_colors(status_bar_layer: *mut RawStatusBarLayer, background: GColor, foreground: GColor);
     pub unsafe fn status_bar_layer_set_separator_mode(status_bar_layer: *mut RawStatusBarLayer, mode: StatusBarLayerSeparatorMode);
     pub unsafe fn status_bar_layer_get_foreground_color(status_bar_layer: *mut RawStatusBarLayer) -> GColor;
     pub unsafe fn status_bar_layer_get_background_color(status_bar_layer: *mut RawStatusBarLayer) -> GColor;
