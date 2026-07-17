@@ -44,6 +44,8 @@ unsafe extern "C" {
     pub unsafe fn window_single_repeating_click_subscribe(button: u8, repeat_interval_ms: u16, func: extern "C" fn(*mut ClickRecognizer, *mut u8));
     pub unsafe fn window_long_click_subscribe(button: u8, delay_ms: u16, down_handler: Option<extern "C" fn(*mut ClickRecognizer, *mut u8)>, up_handler: Option<extern "C" fn(*mut ClickRecognizer, *mut u8)>);
     pub unsafe fn window_multi_click_subscribe(button: u8, min_clicks: u8, max_clicks: u8, timeout: u16, last_click_only: bool, func: extern "C" fn(*mut ClickRecognizer, *mut u8));
+    // Returns the C `ButtonId` enum (int-sized on ARM EABI).
+    pub unsafe fn click_recognizer_get_button_id(recognizer: *mut ClickRecognizer) -> u32;
 
     // RawLayer
     pub unsafe fn layer_create(bounds: GRect) -> *mut RawLayer;

@@ -24,14 +24,13 @@ use crate::pebble::types::{DictPtr, VoidPtr};
 
 /// Represents a `DictionaryIterator`, essentially a list of `Tuple`s.
 /// # Usage
-/// ```
-/// use pebble_rust::app_message::Dictionary;
+/// ```ignore
+/// use pebble_rust::app_message::{AppMessage, Dictionary};
 ///
-/// let dictionary = Dictionary::new();
-/// let mut buffer: [u8; 256] = unimplemented!();
-/// dictionary.init_write(&mut buffer);
-///
-/// dictionary.write_int(0, 2u32);
+/// let mut dictionary = Dictionary::new();
+/// AppMessage::init_write(&mut dictionary);   // firmware fills in the iterator
+/// dictionary.write_int(0, &2i32, 4, true);
+/// AppMessage::send();
 /// ```
 pub struct Dictionary {
     internal: *mut DictionaryIterator
@@ -40,17 +39,11 @@ pub struct Dictionary {
 const NULL_TUPLE: *mut Tuple = 0 as *mut Tuple;
 
 impl Dictionary {
-    #[allow(clippy::cast_ptr_alignment)]
     pub fn new() -> Self {
-        let null_ptr = core::ptr::null_mut();
-        let mut iter = DictionaryIterator {
-            end: null_ptr,
-            cursor: null_ptr as *mut _,
-            dict: null_ptr as *mut types::Dictionary
-        };
-
+        // Starts null; `AppMessage::init_write` points it at the firmware-owned
+        // iterator returned through `app_message_outbox_begin`.
         Self {
-            internal: &mut iter as *mut DictionaryIterator
+            internal: core::ptr::null_mut()
         }
     }
 
@@ -227,10 +220,12 @@ impl AppMessage {
 
     pub fn init_write(dictionary: &mut Dictionary) {
         unsafe {
-            let internal = dictionary.internal;
-            let ptr = internal as *mut *mut DictionaryIterator;
-            app_message_outbox_begin(ptr);
-            dictionary.internal = *ptr;
+            // Out-parameter: the firmware stores its iterator pointer through the
+            // pointer we pass, so pass the address of our own field. (Passing the
+            // old `internal` value here reinterpreted as the slot let the firmware
+            // write through a dangling pointer — smashing a saved return address
+            // on the stack under some opt levels.)
+            app_message_outbox_begin(&mut dictionary.internal as *mut *mut DictionaryIterator);
         }
     }
 

@@ -48,7 +48,15 @@ impl Drop for TickSubscription {
     fn drop(&mut self) {
         unsafe {
             let subs = &mut *core::ptr::addr_of_mut!(TICK_SUBSCRIBERS);
-            subs.retain(|s| s.id != self.id);
+            // Manual find + swap_remove (order doesn't matter) — leaner than `retain`.
+            let mut i = 0;
+            while i < subs.len() {
+                if subs[i].id == self.id {
+                    subs.swap_remove(i);
+                    break;
+                }
+                i += 1;
+            }
             if subs.is_empty() {
                 tick_timer_service_unsubscribe();
             } else {
@@ -80,10 +88,18 @@ pub fn subscribe_minute(handler: impl Fn(TimeInfo, u32) + 'static) -> TickSubscr
 
 // (Re)subscribe the C tick service at the finest (most frequent) unit any subscriber
 // currently wants — the smallest bitmask value, since SECOND < MINUTE < HOUR < ….
+#[inline(never)]
 fn resubscribe() {
     unsafe {
         let subs = &*core::ptr::addr_of!(TICK_SUBSCRIBERS);
-        let finest = subs.iter().map(|s| s.units).min_by_key(|u| *u as u32);
+        // Plain loop for the finest (most frequent = smallest bit) requested unit.
+        let mut finest: Option<TimeUnits> = None;
+        for s in subs {
+            match finest {
+                Some(f) if (f as u32) <= (s.units as u32) => {}
+                _ => finest = Some(s.units),
+            }
+        }
         if let Some(finest) = finest {
             interface::tick_timer_service_subscribe(finest, tick_trampoline);
         }
@@ -104,14 +120,16 @@ extern "C" fn tick_trampoline(t: *mut tm, units_changed: u32) {
 
 /// Returns the current time as a null-terminated C string (e.g. "12:59 AM").
 pub fn current_time_cstr() -> CString {
-    let mut buf: [u8; 9] = [0; 9];
+    let mut buf = alloc::vec![0u8; 9];
     unsafe {
         clock_copy_time_string(buf.as_mut_ptr(), buf.len() as u8);
     }
-    // The buffer is NUL-padded; keep only up to the first NUL so the CString has no
+    // The buffer is NUL-padded; truncate at the first NUL so the CString has no
     // interior NUL bytes.
-    let len = buf.iter().position(|&b| b == 0).unwrap_or(buf.len());
-    unsafe { CString::from_vec_unchecked(buf[..len].to_vec()) }
+    let mut len = 0;
+    while len < buf.len() && buf[len] != 0 { len += 1; }
+    buf.truncate(len);
+    unsafe { CString::from_vec_unchecked(buf) }
 }
 
 /// Write the current time string into `buf`. The buffer must be at least 9 bytes

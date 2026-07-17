@@ -71,19 +71,26 @@ struct ClickContext {
 /// Keeps the click callbacks alive for the window's lifetime. Drop it and the
 /// window's click handlers stop firing.
 pub struct WindowClickHandler {
-    _ctx: Box<ClickContext>,
+    // Raw (not Box) so no `Box` move can invalidate the pointer C holds — deriving a
+    // pointer from a Box and then moving the Box is UB (Box is noalias).
+    ctx: *mut ClickContext,
+}
+
+impl Drop for WindowClickHandler {
+    fn drop(&mut self) {
+        unsafe { drop(Box::from_raw(self.ctx)); }
+    }
 }
 
 impl Window {
     pub fn set_click_handlers(&self, callbacks: ClickCallbacks) -> WindowClickHandler {
-        let mut ctx = Box::new(ClickContext { callbacks });
-        let ctx_ptr: *mut ClickContext = &mut *ctx;
+        let ctx = Box::into_raw(Box::new(ClickContext { callbacks }));
         interface::window_set_click_config_provider_with_context(
             self.raw(),
             click_config_trampoline,
-            ctx_ptr,
+            ctx,
         );
-        WindowClickHandler { _ctx: ctx }
+        WindowClickHandler { ctx }
     }
 }
 
@@ -91,65 +98,60 @@ impl Window {
 // recognizers. Click handlers receive the same context pointer as the provider.
 extern "C" fn click_config_trampoline(ctx: *mut ClickContext) {
     let c = unsafe { &*ctx };
-    configure_button(ButtonId::Up as u8, &c.callbacks.up, tramp_up_click, tramp_up_rep, tramp_up_lp, tramp_up_lr, tramp_up_multi);
-    configure_button(ButtonId::Select as u8, &c.callbacks.select, tramp_select_click, tramp_select_rep, tramp_select_lp, tramp_select_lr, tramp_select_multi);
-    configure_button(ButtonId::Down as u8, &c.callbacks.down, tramp_down_click, tramp_down_rep, tramp_down_lp, tramp_down_lr, tramp_down_multi);
-    configure_button(ButtonId::Back as u8, &c.callbacks.back, tramp_back_click, tramp_back_rep, tramp_back_lp, tramp_back_lr, tramp_back_multi);
+    for button in [ButtonId::Up, ButtonId::Select, ButtonId::Down, ButtonId::Back] {
+        configure_button(button as u8, c.callbacks.for_button(button as u32));
+    }
 }
 
-type Trampoline = extern "C" fn(*mut types::ClickRecognizer, *mut u8);
+impl ClickCallbacks {
+    // Handlers for a raw C ButtonId value (Back 0, Up 1, Select 2, Down 3).
+    fn for_button(&self, id: u32) -> &ButtonHandlers {
+        match id {
+            1 => &self.up,
+            2 => &self.select,
+            3 => &self.down,
+            _ => &self.back,
+        }
+    }
+}
 
-fn configure_button(
-    button: u8,
-    h: &ButtonHandlers,
-    click: Trampoline,
-    repeating: Trampoline,
-    long_pressed: Trampoline,
-    long_released: Trampoline,
-    multi: Trampoline,
-) {
+#[inline(never)]
+fn configure_button(button: u8, h: &ButtonHandlers) {
     // `repeating` and `click` configure the same recognizer; repeating supersedes.
     if let Some(r) = h.repeating.as_ref() {
-        interface::window_single_repeating_click_subscribe(button, r.interval_ms, repeating);
+        interface::window_single_repeating_click_subscribe(button, r.interval_ms, tramp_click);
     } else if h.click.is_some() {
-        interface::window_single_click_subscribe(button, click);
+        interface::window_single_click_subscribe(button, tramp_click);
     }
     if let Some(l) = h.long.as_ref() {
-        let down = l.pressed.as_ref().map(|_| long_pressed);
-        let up = l.released.as_ref().map(|_| long_released);
+        let down = l.pressed.as_ref().map(|_| tramp_long_pressed as extern "C" fn(*mut types::ClickRecognizer, *mut u8));
+        let up = l.released.as_ref().map(|_| tramp_long_released as extern "C" fn(*mut types::ClickRecognizer, *mut u8));
         interface::window_long_click_subscribe(button, l.delay_ms, down, up);
     }
     if let Some(m) = h.multi.as_ref() {
-        interface::window_multi_click_subscribe(button, m.min_clicks, m.max_clicks, m.timeout_ms, m.last_click_only, multi);
+        interface::window_multi_click_subscribe(button, m.min_clicks, m.max_clicks, m.timeout_ms, m.last_click_only, tramp_multi);
     }
 }
 
-macro_rules! button_trampolines {
-    ($click:ident, $rep:ident, $lp:ident, $lr:ident, $multi:ident, $field:ident) => {
-        extern "C" fn $click(_: *mut types::ClickRecognizer, ctx: *mut u8) {
-            let c = unsafe { &*(ctx as *const ClickContext) };
-            if let Some(f) = c.callbacks.$field.click.as_ref() { f(); }
-        }
-        extern "C" fn $rep(_: *mut types::ClickRecognizer, ctx: *mut u8) {
-            let c = unsafe { &*(ctx as *const ClickContext) };
-            if let Some(r) = c.callbacks.$field.repeating.as_ref() { (r.handler)(); }
-        }
-        extern "C" fn $lp(_: *mut types::ClickRecognizer, ctx: *mut u8) {
-            let c = unsafe { &*(ctx as *const ClickContext) };
-            if let Some(l) = c.callbacks.$field.long.as_ref() { if let Some(f) = l.pressed.as_ref() { f(); } }
-        }
-        extern "C" fn $lr(_: *mut types::ClickRecognizer, ctx: *mut u8) {
-            let c = unsafe { &*(ctx as *const ClickContext) };
-            if let Some(l) = c.callbacks.$field.long.as_ref() { if let Some(f) = l.released.as_ref() { f(); } }
-        }
-        extern "C" fn $multi(_: *mut types::ClickRecognizer, ctx: *mut u8) {
-            let c = unsafe { &*(ctx as *const ClickContext) };
-            if let Some(m) = c.callbacks.$field.multi.as_ref() { (m.handler)(); }
-        }
-    };
+// One trampoline per click *kind*; the button comes from the recognizer, so every
+// button shares them (instead of one trampoline per button × kind).
+fn handlers<'a>(rec: *mut types::ClickRecognizer, ctx: *mut u8) -> &'a ButtonHandlers {
+    let c = unsafe { &*(ctx as *const ClickContext) };
+    c.callbacks.for_button(interface::click_recognizer_get_button_id(rec))
 }
 
-button_trampolines!(tramp_up_click,     tramp_up_rep,     tramp_up_lp,     tramp_up_lr,     tramp_up_multi,     up);
-button_trampolines!(tramp_select_click, tramp_select_rep, tramp_select_lp, tramp_select_lr, tramp_select_multi, select);
-button_trampolines!(tramp_down_click,   tramp_down_rep,   tramp_down_lp,   tramp_down_lr,   tramp_down_multi,   down);
-button_trampolines!(tramp_back_click,   tramp_back_rep,   tramp_back_lp,   tramp_back_lr,   tramp_back_multi,   back);
+extern "C" fn tramp_click(rec: *mut types::ClickRecognizer, ctx: *mut u8) {
+    // Shared by the single and repeating recognizers (same slot in the C API).
+    let h = handlers(rec, ctx);
+    if let Some(r) = h.repeating.as_ref() { (r.handler)(); }
+    else if let Some(f) = h.click.as_ref() { f(); }
+}
+extern "C" fn tramp_long_pressed(rec: *mut types::ClickRecognizer, ctx: *mut u8) {
+    if let Some(l) = handlers(rec, ctx).long.as_ref() { if let Some(f) = l.pressed.as_ref() { f(); } }
+}
+extern "C" fn tramp_long_released(rec: *mut types::ClickRecognizer, ctx: *mut u8) {
+    if let Some(l) = handlers(rec, ctx).long.as_ref() { if let Some(f) = l.released.as_ref() { f(); } }
+}
+extern "C" fn tramp_multi(rec: *mut types::ClickRecognizer, ctx: *mut u8) {
+    if let Some(m) = handlers(rec, ctx).multi.as_ref() { (m.handler)(); }
+}

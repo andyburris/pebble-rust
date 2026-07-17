@@ -192,7 +192,9 @@ impl Drop for BitmapLayer {
 pub struct MenuLayer<T> {
     internal: *mut RawMenuLayer,
     inner:    *mut types::RawLayer,
-    _ctx:     Box<MenuLayerContext<T>>,
+    // Raw (not Box) so no `Box` move can invalidate the pointer C holds — deriving a
+    // pointer from a Box and then moving the Box is UB (Box is noalias).
+    ctx:      *mut MenuLayerContext<T>,
 }
 
 impl<T> AsLayer for MenuLayer<T> {
@@ -204,30 +206,31 @@ impl<T> MenuLayer<T> {
     /// box) and handed to every callback as `&T`; retrieve it later with `context()`.
     pub fn new(frame: GRect, context: T, callbacks: TypedMenuCallbacks<T>) -> Self {
         let internal = interface::menu_layer_create(frame);
-        let mut ctx = Box::new(MenuLayerContext { menu: internal, context, callbacks });
-        let ctx_ptr: *mut MenuLayerContext<T> = &mut *ctx;
+        // Register a C trampoline only for the callbacks that are set (fn options are
+        // Copy, so read them before the struct moves into the box).
         let raw_cbs = MenuLayerCallbacks {
-            get_num_sections:      ctx.callbacks.get_num_sections      .map(|_| trampoline_num_sections::<T>      as extern "C" fn(*mut u8, *mut ()) -> u16),
-            get_num_rows:          ctx.callbacks.get_num_rows          .map(|_| trampoline_num_rows::<T>          as extern "C" fn(*mut u8, u16, *mut ()) -> u16),
-            get_cell_height:       ctx.callbacks.get_cell_height       .map(|_| trampoline_cell_height::<T>       as extern "C" fn(*mut u8, *const MenuIndex, *mut ()) -> i16),
-            get_header_height:     ctx.callbacks.get_header_height     .map(|_| trampoline_header_height::<T>     as extern "C" fn(*mut u8, u16, *mut ()) -> i16),
-            draw_row:              ctx.callbacks.draw_row              .map(|_| trampoline_draw_row::<T>          as extern "C" fn(*mut types::GContext, *const types::RawLayer, *const MenuIndex, *mut ())),
-            draw_header:           ctx.callbacks.draw_header           .map(|_| trampoline_draw_header::<T>       as extern "C" fn(*mut types::GContext, *const types::RawLayer, u16, *mut ())),
-            select_click:          ctx.callbacks.select_click          .map(|_| trampoline_select_click::<T>      as extern "C" fn(*mut u8, *const MenuIndex, *mut ())),
-            select_long_click:     ctx.callbacks.select_long_click     .map(|_| trampoline_select_long_click::<T> as extern "C" fn(*mut u8, *const MenuIndex, *mut ())),
-            selection_changed:     ctx.callbacks.selection_changed     .map(|_| trampoline_selection_changed::<T> as extern "C" fn(*mut u8, MenuIndex, MenuIndex, *mut ())),
-            get_separator_height:  ctx.callbacks.get_separator_height  .map(|_| trampoline_separator_height::<T>  as extern "C" fn(*mut u8, *const MenuIndex, *mut ()) -> i16),
-            draw_separator:        ctx.callbacks.draw_separator        .map(|_| trampoline_draw_separator::<T>    as extern "C" fn(*mut types::GContext, *const types::RawLayer, *const MenuIndex, *mut ())),
-            selection_will_change: ctx.callbacks.selection_will_change .map(|_| trampoline_selection_will_change::<T> as extern "C" fn(*mut u8, *mut MenuIndex, MenuIndex, *mut ())),
-            draw_background:       ctx.callbacks.draw_background       .map(|_| trampoline_draw_background::<T>   as extern "C" fn(*mut types::GContext, *const types::RawLayer, bool, *mut ())),
+            get_num_sections:      callbacks.get_num_sections      .map(|_| trampoline_num_sections::<T>      as extern "C" fn(*mut u8, *mut ()) -> u16),
+            get_num_rows:          callbacks.get_num_rows          .map(|_| trampoline_num_rows::<T>          as extern "C" fn(*mut u8, u16, *mut ()) -> u16),
+            get_cell_height:       callbacks.get_cell_height       .map(|_| trampoline_cell_height::<T>       as extern "C" fn(*mut u8, *const MenuIndex, *mut ()) -> i16),
+            get_header_height:     callbacks.get_header_height     .map(|_| trampoline_header_height::<T>     as extern "C" fn(*mut u8, u16, *mut ()) -> i16),
+            draw_row:              callbacks.draw_row              .map(|_| trampoline_draw_row::<T>          as extern "C" fn(*mut types::GContext, *const types::RawLayer, *const MenuIndex, *mut ())),
+            draw_header:           callbacks.draw_header           .map(|_| trampoline_draw_header::<T>       as extern "C" fn(*mut types::GContext, *const types::RawLayer, u16, *mut ())),
+            select_click:          callbacks.select_click          .map(|_| trampoline_select_click::<T>      as extern "C" fn(*mut u8, *const MenuIndex, *mut ())),
+            select_long_click:     callbacks.select_long_click     .map(|_| trampoline_select_long_click::<T> as extern "C" fn(*mut u8, *const MenuIndex, *mut ())),
+            selection_changed:     callbacks.selection_changed     .map(|_| trampoline_selection_changed::<T> as extern "C" fn(*mut u8, MenuIndex, MenuIndex, *mut ())),
+            get_separator_height:  callbacks.get_separator_height  .map(|_| trampoline_separator_height::<T>  as extern "C" fn(*mut u8, *const MenuIndex, *mut ()) -> i16),
+            draw_separator:        callbacks.draw_separator        .map(|_| trampoline_draw_separator::<T>    as extern "C" fn(*mut types::GContext, *const types::RawLayer, *const MenuIndex, *mut ())),
+            selection_will_change: callbacks.selection_will_change .map(|_| trampoline_selection_will_change::<T> as extern "C" fn(*mut u8, *mut MenuIndex, MenuIndex, *mut ())),
+            draw_background:       callbacks.draw_background       .map(|_| trampoline_draw_background::<T>   as extern "C" fn(*mut types::GContext, *const types::RawLayer, bool, *mut ())),
         };
-        interface::menu_layer_set_callbacks(internal, ctx_ptr, raw_cbs);
+        let ctx = Box::into_raw(Box::new(MenuLayerContext { menu: internal, context, callbacks }));
+        interface::menu_layer_set_callbacks(internal, ctx, raw_cbs);
         let inner = interface::menu_layer_get_layer(internal);
-        MenuLayer { internal, inner, _ctx: ctx }
+        MenuLayer { internal, inner, ctx }
     }
 
     /// The context handed to callbacks.
-    pub fn context(&self) -> &T { &self._ctx.context }
+    pub fn context(&self) -> &T { unsafe { &(*self.ctx).context } }
 
     pub fn set_normal_colors(&self, background: GColor, foreground: GColor) {
         interface::menu_layer_set_normal_colors(self.internal, background, foreground);
@@ -277,8 +280,9 @@ impl<T> MenuLayer<T> {
 
 impl<T> Drop for MenuLayer<T> {
     fn drop(&mut self) {
-        // Frees the menu layer and its inner layer; the boxed context drops after.
+        // Frees the menu layer and its inner layer, then the boxed context.
         interface::menu_layer_destroy(self.internal);
+        unsafe { drop(Box::from_raw(self.ctx)); }
     }
 }
 
@@ -291,7 +295,10 @@ struct DrawLayerContext<T> {
 
 pub struct DrawLayer<T> {
     internal: *mut types::RawLayer,
-    _ctx: Box<DrawLayerContext<T>>,
+    // Raw (not Box) so no `Box` move can invalidate the pointer stored in the C
+    // layer's data slot — deriving a pointer from a Box and then moving the Box is
+    // UB (Box is noalias).
+    ctx: *mut DrawLayerContext<T>,
 }
 
 impl<T> AsLayer for DrawLayer<T> {
@@ -304,22 +311,22 @@ impl<T> DrawLayer<T> {
     /// bounds, read fresh each paint. Retrieve the context later with `context()`.
     pub fn new(frame: GRect, context: T, draw: fn(&mut types::GContext, &mut T, GRect)) -> DrawLayer<T> {
         let internal = interface::layer_create_with_data(frame, core::mem::size_of::<*mut DrawLayerContext<T>>());
-        let mut ctx = Box::new(DrawLayerContext { context, draw });
-        let ctx_ptr: *mut DrawLayerContext<T> = &mut *ctx;
+        let ctx = Box::into_raw(Box::new(DrawLayerContext { context, draw }));
         // Store a pointer to the context in the layer's extra data bytes.
         let data = interface::layer_get_data(internal) as *mut *mut DrawLayerContext<T>;
-        unsafe { *data = ctx_ptr; }
+        unsafe { *data = ctx; }
         interface::layer_set_update_proc(internal, draw_trampoline::<T>);
-        DrawLayer { internal, _ctx: ctx }
+        DrawLayer { internal, ctx }
     }
 
     /// The context handed to the draw callback.
-    pub fn context(&self) -> &T { &self._ctx.context }
+    pub fn context(&self) -> &T { unsafe { &(*self.ctx).context } }
 }
 
 impl<T> Drop for DrawLayer<T> {
     fn drop(&mut self) {
         interface::layer_destroy(self.internal);
+        unsafe { drop(Box::from_raw(self.ctx)); }
     }
 }
 

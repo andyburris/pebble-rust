@@ -128,6 +128,10 @@ pub fn window_multi_click_subscribe(button: u8, min_clicks: u8, max_clicks: u8, 
     }
 }
 
+pub fn click_recognizer_get_button_id(recognizer: *mut ClickRecognizer) -> u32 {
+    unsafe { declarations::click_recognizer_get_button_id(recognizer) }
+}
+
 pub fn layer_create(bounds: GRect) -> *mut RawLayer {
     unsafe {
         declarations::layer_create(bounds)
