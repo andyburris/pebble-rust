@@ -91,6 +91,7 @@ unsafe extern "C" {
     pub unsafe fn graphics_draw_bitmap_in_rect(ctx: *mut GContext, bitmap: *const RawGBitmap, dest_rect: GRect);
     pub unsafe fn graphics_fill_circle(ctx: *mut GContext, center: GPoint, radius: u16);
     pub unsafe fn graphics_fill_rect(ctx: *mut GContext, rect: GRect, corner_radius: u16, corner_mask: GCornerMask);
+    pub unsafe fn graphics_draw_rect(ctx: *mut GContext, rect: GRect);
     pub unsafe fn graphics_draw_line(ctx: *mut GContext, p0: GPoint, p1: GPoint);
     pub unsafe fn graphics_draw_text(ctx: *mut GContext, text: *const c_char, font: RawGFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment, text_attributes: *mut c_void);
     pub unsafe fn graphics_text_layout_get_content_size(text: *const c_char, font: RawGFont, rect: GRect, overflow: GTextOverflowMode, alignment: GTextAlignment) -> GSize;

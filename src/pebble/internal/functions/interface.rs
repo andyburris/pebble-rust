@@ -331,6 +331,13 @@ pub fn graphics_fill_rect(ctx: *mut GContext, rect: GRect, corner_radius: u16, c
 }
 
 
+pub fn graphics_draw_rect(ctx: *mut GContext, rect: GRect) {
+    unsafe {
+        declarations::graphics_draw_rect(ctx, rect);
+    }
+}
+
+
 pub fn graphics_draw_line(ctx: *mut GContext, p0: GPoint, p1: GPoint) {
     unsafe {
         declarations::graphics_draw_line(ctx, p0, p1);

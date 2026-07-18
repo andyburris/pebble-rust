@@ -27,7 +27,7 @@
 #![allow(non_camel_case_types)]
 
 use crate::pebble::internal::functions::interface;
-use crate::pebble::internal::functions::{interface::{graphics_context_set_compositing_mode, graphics_context_set_fill_color, graphics_context_set_stroke_color, graphics_context_set_stroke_width, graphics_context_set_text_color, graphics_draw_bitmap_in_rect, graphics_draw_line, graphics_draw_text, graphics_fill_circle, graphics_fill_rect, graphics_text_layout_get_content_size}};
+use crate::pebble::internal::functions::{interface::{graphics_context_set_compositing_mode, graphics_context_set_fill_color, graphics_context_set_stroke_color, graphics_context_set_stroke_width, graphics_context_set_text_color, graphics_draw_bitmap_in_rect, graphics_draw_line, graphics_draw_rect, graphics_draw_text, graphics_fill_circle, graphics_fill_rect, graphics_text_layout_get_content_size}};
 use crate::pebble::system::fonts::GFont;
 use crate::pebble::types::GBitmap;
 
@@ -56,6 +56,9 @@ impl GContext {
     }
     pub fn fill_rect(&mut self, rect: GRect, corner_radius: u16, corner_mask: GCornerMask) {
         graphics_fill_rect(self, rect, corner_radius, corner_mask);
+    }
+    pub fn draw_rect(&mut self, rect: GRect) {
+        graphics_draw_rect(self, rect);
     }
 
     pub fn set_compositing_mode(&mut self, mode: GCompOp) {

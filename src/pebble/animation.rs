@@ -6,6 +6,10 @@ use crate::pebble::internal::types::{RawAnimation, AnimationImplementation, Anim
 // reaching into `internal::types`.
 pub use crate::pebble::internal::types::{AnimationProgress, AnimationCurve, ANIMATION_NORMALIZED_MAX};
 
+/// Passed to [`Animation::set_play_count`] to repeat the animation forever. Matches the
+/// C SDK's `ANIMATION_PLAY_COUNT_INFINITE` (`UINT32_MAX`).
+pub const ANIMATION_PLAY_COUNT_INFINITE: u32 = u32::MAX;
+
 // ── Animation ─────────────────────────────────────────────────────────────────
 //
 // A faithful wrapper over the Pebble C `Animation` API. The public type owns the
